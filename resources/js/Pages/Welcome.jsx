@@ -31,7 +31,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             <div className="flex items-center space-x-reverse space-x-4">
                                 {auth.user ? (
                                     <Link
-                                        href={route('analyzer')}
+                                        href={route('website.analyzer')}
                                         className="btn-arabic bg-white text-blue-600 hover:bg-blue-50 shadow-lg transform hover:scale-105"
                                     >
                                         لوحة التحكم
@@ -72,7 +72,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                                 {auth.user ? (
                                     <Link
-                                        href={route('analyzer')}
+                                        href={route('website.analyzer')}
                                         className="btn-arabic gradient-primary text-white px-8 py-4 text-lg shadow-arabic-lg transform hover:scale-105 hover:shadow-xl transition-all duration-300"
                                     >
                                         🚀 ابدأ التحليل الآن

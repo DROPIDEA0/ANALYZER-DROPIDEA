@@ -27,16 +27,12 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "mkdir -p storage/framework/{sessions,views,cache} && APP_NAME=\"AnalyzerDropidea\" APP_ENV=\"local\" APP_DEBUG=\"true\" APP_KEY=\"base64:1KpiwDfJS1VpDdzUP7XjzcPIxT9c0R3rfMsx/zjHX7U=\" APP_URL=\"https://d51cbf95-8d8d-4177-aba6-cc5819929518-00-2oyeio9t1hbuo.sisko.replit.dev\" DB_CONNECTION=\"sqlite\" DB_DATABASE=\"database/database.sqlite\" php artisan serve --host=0.0.0.0 --port=5000"
+args = "mkdir -p storage/framework/{sessions,views,cache} && php artisan serve --host=0.0.0.0 --port=5000"
 waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 36175
-externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
