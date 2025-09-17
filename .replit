@@ -50,13 +50,13 @@ outputType = "webview"
 name = "Laravel with Vite"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "APP_KEY=\"base64:c3F/DFfEwH2exDKvmMrCKljN0mrxbKZ/EJeKYtLQ1EM=\" APP_NAME=\"Laravel\" APP_ENV=\"local\" APP_DEBUG=\"true\" APP_URL=\"https://d51cbf95-8d8d-4177-aba6-cc5819929518-00-2oyeio9t1hbuo.sisko.replit.dev\" DB_CONNECTION=\"sqlite\" DB_DATABASE=\"database/database.sqlite\" npm run dev & php artisan serve --host=0.0.0.0 --port=5000"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "mkdir -p storage/framework/{sessions,views,cache} && npm run dev & php artisan serve --host=0.0.0.0 --port=5000"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Laravel App"
@@ -97,6 +97,10 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 45039
+externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
