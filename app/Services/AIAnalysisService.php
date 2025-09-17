@@ -190,7 +190,8 @@ class AIAnalysisService
     {
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
-            'Content-Type' => 'application/json'      ])->post('https://api.openai.com/v1/chat/completions', [
+            'Content-Type' => 'application/json'
+        ])->post('https://api.openai.com/v1/chat/completions', [
             'model' => 'gpt-4',
             'messages' => [
                 [

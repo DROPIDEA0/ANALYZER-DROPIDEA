@@ -76,9 +76,17 @@ class AiApiSettingController extends Controller
      */
     public function store(Request $request)
     {
+        // التحقق من وجود الإعدادات للمستخدم
+        $existingSetting = AiApiSetting::where('user_id', Auth::id())
+            ->where('provider', $request->provider)
+            ->first();
+
+        // إذا كانت الإعدادات موجودة، فإن api_key اختياري
+        $apiKeyRule = $existingSetting ? 'nullable|string|min:10' : 'required|string|min:10';
+
         $request->validate([
             'provider' => 'required|string|in:openai,anthropic,manus',
-            'api_key' => 'required|string|min:10',
+            'api_key' => $apiKeyRule,
             'api_base_url' => 'nullable|url',
             'model' => 'nullable|string',
             'is_active' => 'boolean',
@@ -87,19 +95,26 @@ class AiApiSettingController extends Controller
 
         $user = Auth::user();
 
+        // تحضير البيانات للتحديث
+        $updateData = [
+            'api_base_url' => $request->api_base_url,
+            'model' => $request->model,
+            'is_active' => $request->boolean('is_active'),
+            'settings' => $request->settings ?: AiApiSetting::getDefaultSettings($request->provider),
+        ];
+
+        // إضافة api_key فقط إذا تم إرساله
+        if ($request->filled('api_key')) {
+            $updateData['api_key'] = $request->api_key;
+        }
+
         // البحث عن الإعدادات الموجودة أو إنشاء جديدة
         $apiSetting = AiApiSetting::updateOrCreate(
             [
                 'user_id' => $user->id,
                 'provider' => $request->provider,
             ],
-            [
-                'api_key' => $request->api_key,
-                'api_base_url' => $request->api_base_url,
-                'model' => $request->model,
-                'is_active' => $request->boolean('is_active'),
-                'settings' => $request->settings ?: AiApiSetting::getDefaultSettings($request->provider),
-            ]
+            $updateData
         );
 
         return redirect()->back()->with('status', [
