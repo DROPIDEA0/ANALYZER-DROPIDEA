@@ -1,0 +1,347 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* إعدادات الخط العربي الأساسية */
+@layer base {
+  html {
+    direction: rtl;
+    font-family: 'Cairo', 'Tajawal', 'Almarai', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Cairo', 'Tajawal', 'Almarai', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+  
+  * {
+    font-family: 'Cairo', 'Tajawal', 'Almarai', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+}
+
+/* تحسينات الخط العربي */
+@layer components {
+  .font-arabic {
+    font-family: 'Cairo', 'Tajawal', 'Almarai', sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1, 'kern' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  .font-cairo {
+    font-family: 'Cairo', sans-serif;
+  }
+  
+  .font-tajawal {
+    font-family: 'Tajawal', sans-serif;
+  }
+  
+  .font-almarai {
+    font-family: 'Almarai', sans-serif;
+  }
+  
+  /* عناوين جميلة */
+  .heading-primary {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  
+  .heading-secondary {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  
+  .text-body {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 400;
+    line-height: 1.8;
+  }
+  
+  /* تحسينات RTL */
+  .rtl-container {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  .rtl-flex {
+    direction: rtl;
+    display: flex;
+  }
+  
+  .rtl-grid {
+    direction: rtl;
+    display: grid;
+  }
+  
+  /* تحسينات الأزرار */
+  .btn-arabic {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  /* تحسينات النماذج */
+  .input-arabic {
+    font-family: 'Almarai', sans-serif;
+    direction: rtl;
+    text-align: right;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    transition: all 0.3s ease;
+  }
+  
+  .input-arabic:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* تحسينات البطاقات */
+  .card-arabic {
+    direction: rtl;
+    text-align: right;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .card-arabic:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  /* تحسينات القوائم */
+  .menu-arabic {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  .menu-arabic li {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .menu-arabic li:hover {
+    background-color: #f3f4f6;
+  }
+  
+  /* تحسينات الجداول */
+  .table-arabic {
+    direction: rtl;
+    text-align: right;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table-arabic th,
+  .table-arabic td {
+    padding: 0.75rem 1rem;
+    text-align: right;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .table-arabic th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    font-family: 'Cairo', sans-serif;
+  }
+  
+  /* تحسينات التنبيهات */
+  .alert-arabic {
+    direction: rtl;
+    text-align: right;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-family: 'Almarai', sans-serif;
+    font-weight: 400;
+  }
+  
+  /* تحسينات التدرجات */
+  .gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .gradient-secondary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+  
+  .gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+  
+  .gradient-warning {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+  
+  /* تحسينات الظلال */
+  .shadow-arabic {
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  .shadow-arabic-lg {
+    box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.15);
+  }
+  
+  /* تحسينات الحدود */
+  .border-arabic {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+  }
+  
+  /* تحسينات التباعد */
+  .spacing-arabic {
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+  
+  /* تحسينات الألوان للنصوص العربية */
+  .text-primary-arabic {
+    color: #1e40af;
+  }
+  
+  .text-secondary-arabic {
+    color: #6b7280;
+  }
+  
+  .text-success-arabic {
+    color: #059669;
+  }
+  
+  .text-warning-arabic {
+    color: #d97706;
+  }
+  
+  .text-danger-arabic {
+    color: #dc2626;
+  }
+}
+
+/* تحسينات خاصة للشاشات الصغيرة */
+@media (max-width: 768px) {
+  .mobile-arabic {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .mobile-arabic .heading-primary {
+    font-size: 1.5rem;
+  }
+  
+  .mobile-arabic .heading-secondary {
+    font-size: 1.25rem;
+  }
+}
+
+/* تحسينات للطباعة */
+@media print {
+  .print-arabic {
+    font-family: 'Cairo', sans-serif;
+    direction: rtl;
+    text-align: right;
+    color: #000;
+    background: #fff;
+  }
+}
+
+/* تحسينات الرسوم المتحركة */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 0.6s ease-out;
+}
+
+.animate-fade-in-left {
+  animation: fadeInLeft 0.6s ease-out;
+}
+
+/* تحسينات خاصة للنصوص الطويلة */
+.text-justify-arabic {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  word-wrap: break-word;
+}
+
+/* تحسينات للقوائم المنسدلة */
+.dropdown-arabic {
+  direction: rtl;
+  text-align: right;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.dropdown-arabic li {
+  padding: 0.75rem 1rem;
+  font-family: 'Almarai', sans-serif;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-arabic li:hover {
+  background-color: #f3f4f6;
+}
+
+/* تحسينات للتبويبات */
+.tabs-arabic {
+  direction: rtl;
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tab-arabic {
+  padding: 0.75rem 1.5rem;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tab-arabic.active {
+  border-bottom-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.tab-arabic:hover {
+  background-color: #f9fafb;
+}
+
