@@ -22,37 +22,41 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
         settings: {},
     });
 
-    // تحديث البيانات عند تغيير التبويب
+    // تحديث البيانات عند تغيير التبويب أو تحديث userSettings
     useEffect(() => {
         const currentSetting = settingsMap[activeTab];
-        if (currentSetting) {
+        if (currentSetting && currentSetting.id) {
+            // إعداد موجود - استخدم البيانات المحفوظة
             setData({
                 provider: currentSetting.provider,
-                api_key: currentSetting.api_key || '',
+                api_key: data.api_key || '', // احتفظ بالمفتاح المدخل إن وجد
                 api_base_url: currentSetting.api_base_url || '',
                 model: currentSetting.model || '',
                 is_active: currentSetting.is_active || false,
                 settings: currentSetting.settings || {},
             });
         } else {
+            // إعداد جديد - استخدم القيم الافتراضية
             const defaultSettings = providers[activeTab];
             setData({
                 provider: activeTab,
-                api_key: '',
+                api_key: data.api_key || '', // احتفظ بالمفتاح المدخل
                 api_base_url: defaultSettings?.api_base_url || '',
                 model: defaultSettings?.models?.[0] || '',
                 is_active: false,
                 settings: {},
             });
         }
-    }, [activeTab]);
+    }, [activeTab, userSettings]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('ai-api-settings.store'), {
             onSuccess: () => {
-                // إعادة تعيين النموذج بعد النجاح
+                // لا نعيد تعيين النموذج للحفاظ على البيانات المدخلة
+                // سيتم تحديث البيانات تلقائياً من خلال userSettings
             },
+            preserveScroll: true,
         });
     };
 
@@ -156,6 +160,11 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
                                         }`}>
                                             {isActive ? 'مفعل' : 'غير مفعل'}
                                         </span>
+                                        {setting?.has_api_key && (
+                                            <div className="text-xs text-blue-600 mt-1">
+                                                ✓ تم حفظ مفتاح API
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -216,8 +225,8 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
                                             value={data.api_key}
                                             onChange={(e) => setData('api_key', e.target.value)}
                                             className="input-arabic w-full pl-10"
-                                            placeholder="أدخل مفتاح API"
-                                            required
+                                            placeholder={settingsMap[activeTab]?.has_api_key ? 'تم حفظ المفتاح - أدخل مفتاح جديد للتغيير' : 'أدخل مفتاح API'}
+                                            required={!settingsMap[activeTab]?.has_api_key}
                                         />
                                         <button
                                             type="button"
@@ -309,7 +318,24 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
                                             type="button"
                                             onClick={() => {
                                                 if (confirm('هل أنت متأكد من حذف هذه الإعدادات؟')) {
-                                                    // إضافة منطق الحذف هنا
+                                                    const form = document.createElement('form');
+                                                    form.method = 'POST';
+                                                    form.action = route('ai-api-settings.destroy', settingsMap[activeTab].id);
+                                                    
+                                                    const csrfToken = document.createElement('input');
+                                                    csrfToken.type = 'hidden';
+                                                    csrfToken.name = '_token';
+                                                    csrfToken.value = document.querySelector('meta[name="csrf-token"]').content;
+                                                    
+                                                    const methodField = document.createElement('input');
+                                                    methodField.type = 'hidden';
+                                                    methodField.name = '_method';
+                                                    methodField.value = 'DELETE';
+                                                    
+                                                    form.appendChild(csrfToken);
+                                                    form.appendChild(methodField);
+                                                    document.body.appendChild(form);
+                                                    form.submit();
                                                 }
                                             }}
                                             className="text-red-600 hover:text-red-800 font-cairo text-sm"
@@ -322,15 +348,50 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
                         </div>
                     </div>
 
-                    {/* معلومات إضافية */}
-                    <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-                        <h3 className="font-bold text-blue-900 mb-3 font-cairo">💡 نصائح مهمة</h3>
-                        <ul className="space-y-2 text-blue-800 font-almarai">
-                            <li>• احرص على حماية مفاتيح API وعدم مشاركتها مع أحد</li>
-                            <li>• يمكنك تفعيل عدة مزودين في نفس الوقت للحصول على تحليل أكثر شمولية</li>
-                            <li>• استخدم زر "اختبار الاتصال" للتأكد من صحة الإعدادات قبل الحفظ</li>
-                            <li>• سيتم استخدام المزودين المفعلين في تحليل المواقع تلقائياً</li>
-                        </ul>
+                    {/* معلومات إضافية وحالة النظام */}
+                    <div className="mt-8 grid md:grid-cols-2 gap-6">
+                        {/* نصائح مهمة */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                            <h3 className="font-bold text-blue-900 mb-3 font-cairo">💡 نصائح مهمة</h3>
+                            <ul className="space-y-2 text-blue-800 font-almarai text-sm">
+                                <li>• احرص على حماية مفاتيح API وعدم مشاركتها مع أحد</li>
+                                <li>• يمكنك تفعيل عدة مزودين في نفس الوقت للحصول على تحليل أكثر شمولية</li>
+                                <li>• استخدم زر "اختبار الاتصال" للتأكد من صحة الإعدادات قبل الحفظ</li>
+                                <li>• سيتم استخدام المزودين المفعلين في تحليل المواقع تلقائياً</li>
+                            </ul>
+                        </div>
+
+                        {/* حالة النظام */}
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                            <h3 className="font-bold text-green-900 mb-3 font-cairo">📊 حالة النظام</h3>
+                            <div className="space-y-2 text-sm font-almarai">
+                                {Object.entries(providers).map(([key, provider]) => {
+                                    const setting = settingsMap[key];
+                                    const isConfigured = setting?.has_api_key && setting?.is_active;
+                                    
+                                    return (
+                                        <div key={key} className="flex items-center justify-between">
+                                            <span className="text-gray-700">{provider.name}</span>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                                isConfigured 
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}>
+                                                {isConfigured ? 'جاهز' : 'غير مكوّن'}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                                <div className="mt-3 pt-3 border-t border-green-200">
+                                    <div className="flex items-center justify-between font-bold">
+                                        <span className="text-green-900">المزودين النشطين:</span>
+                                        <span className="text-green-700">
+                                            {Object.values(settingsMap).filter(s => s?.has_api_key && s?.is_active).length} / {Object.keys(providers).length}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

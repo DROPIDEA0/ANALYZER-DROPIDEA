@@ -24,6 +24,8 @@ class AIAnalysisService
         if (Auth::check()) {
             $this->userApiSettings = AiApiSetting::where('user_id', Auth::id())
                 ->where('is_active', true)
+                ->whereNotNull('api_key')
+                ->where('api_key', '!=', '')
                 ->get()
                 ->keyBy('provider');
         } else {

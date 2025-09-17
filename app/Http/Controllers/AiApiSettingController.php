@@ -35,9 +35,38 @@ class AiApiSettingController extends Controller
             }
         }
 
+        // تحضير البيانات للواجهة الأمامية مع إضافة masked_api_key
+        $settingsForView = $userSettings->map(function ($setting) {
+            if ($setting->exists) {
+                return [
+                    'id' => $setting->id,
+                    'provider' => $setting->provider,
+                    'api_key' => '', // لا نرسل المفتاح الحقيقي للأمان
+                    'masked_api_key' => $setting->masked_api_key,
+                    'has_api_key' => !empty($setting->api_key),
+                    'api_base_url' => $setting->api_base_url,
+                    'model' => $setting->model,
+                    'is_active' => $setting->is_active,
+                    'settings' => $setting->settings,
+                    'created_at' => $setting->created_at,
+                    'updated_at' => $setting->updated_at,
+                ];
+            }
+            return [
+                'provider' => $setting->provider,
+                'api_key' => '',
+                'masked_api_key' => '',
+                'has_api_key' => false,
+                'api_base_url' => $setting->api_base_url ?? '',
+                'model' => $setting->model ?? '',
+                'is_active' => $setting->is_active ?? false,
+                'settings' => $setting->settings ?? [],
+            ];
+        });
+
         return Inertia::render('AiApiSettings', [
             'providers' => $providers,
-            'userSettings' => $userSettings->values(),
+            'userSettings' => $settingsForView->values(),
             'status' => session('status'),
         ]);
     }
