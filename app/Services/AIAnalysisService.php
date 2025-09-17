@@ -212,6 +212,33 @@ class AIAnalysisService
     }
 
     /**
+     * تحليل باستخدام Anthropic مع الإعدادات الافتراضية
+     */
+    private function analyzeWithAnthropicDefault($prompt)
+    {
+        $response = Http::withHeaders([
+            'x-api-key' => env('ANTHROPIC_API_KEY'),
+            'Content-Type' => 'application/json',
+            'anthropic-version' => '2023-06-01'
+        ])->post('https://api.anthropic.com/v1/messages', [
+            'model' => 'claude-3-opus-20240229',
+            'max_tokens' => 4000,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ]
+        ]);
+
+        if ($response->successful()) {
+            return $response->json()['content'][0]['text'];
+        }
+
+        throw new \Exception('Anthropic API request failed: ' . $response->body());
+    }
+
+    /**
      * تحليل باستخدام Anthropic مع إعدادات المستخدم
      */
     private function analyzeWithAnthropic($prompt)
@@ -501,6 +528,62 @@ class AIAnalysisService
             Log::error('Technology analysis failed: ' . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * دمج نتائج التحليل من مزودين مختلفين
+     */
+    protected function combineAnalysisResults($results)
+    {
+        if (empty($results)) {
+            return [
+                'analysis' => 'لم يتم العثور على تحليل من الذكاء الاصطناعي.',
+                'score' => 0,
+                'recommendations' => [],
+                'provider' => 'none'
+            ];
+        }
+
+        // إذا كان هناك نتيجة واحدة فقط
+        if (count($results) === 1) {
+            return reset($results);
+        }
+
+        // دمج النتائج من عدة مزودين
+        $combinedAnalysis = '';
+        $totalScore = 0;
+        $allRecommendations = [];
+        $providers = [];
+
+        foreach ($results as $provider => $result) {
+            $providers[] = $provider;
+            
+            if (isset($result['analysis'])) {
+                $combinedAnalysis .= "\n\n## تحليل من {$provider}:\n" . $result['analysis'];
+            }
+            
+            if (isset($result['score'])) {
+                $totalScore += $result['score'];
+            }
+            
+            if (isset($result['recommendations']) && is_array($result['recommendations'])) {
+                $allRecommendations = array_merge($allRecommendations, $result['recommendations']);
+            }
+        }
+
+        // حساب المتوسط للنقاط
+        $averageScore = count($results) > 0 ? round($totalScore / count($results), 1) : 0;
+
+        // إزالة التوصيات المكررة
+        $uniqueRecommendations = array_unique($allRecommendations);
+
+        return [
+            'analysis' => trim($combinedAnalysis),
+            'score' => $averageScore,
+            'recommendations' => array_values($uniqueRecommendations),
+            'provider' => implode(', ', $providers),
+            'providers_count' => count($results)
+        ];
     }
 }
 
