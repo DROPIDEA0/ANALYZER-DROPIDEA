@@ -5,3 +5,76 @@ channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Laravel Dev Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Laravel with Vite"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Laravel App"
+
+[[workflows.workflow]]
+name = "Laravel Dev Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "APP_KEY=\"base64:c3F/DFfEwH2exDKvmMrCKljN0mrxbKZ/EJeKYtLQ1EM=\" APP_NAME=\"Laravel\" APP_ENV=\"local\" APP_DEBUG=\"true\" APP_URL=\"http://localhost:5000\" DB_CONNECTION=\"sqlite\" DB_DATABASE=\"database/database.sqlite\" php artisan serve --host=127.0.0.1 --port=8000 & npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "Laravel with Vite"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "APP_KEY=\"base64:c3F/DFfEwH2exDKvmMrCKljN0mrxbKZ/EJeKYtLQ1EM=\" APP_NAME=\"Laravel\" APP_ENV=\"local\" APP_DEBUG=\"true\" APP_URL=\"https://d51cbf95-8d8d-4177-aba6-cc5819929518-00-2oyeio9t1hbuo.sisko.replit.dev\" DB_CONNECTION=\"sqlite\" DB_DATABASE=\"database/database.sqlite\" npm run dev & php artisan serve --host=0.0.0.0 --port=5000"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "Laravel App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "mkdir -p storage/framework/{sessions,views,cache} && APP_NAME=\"Laravel\" APP_ENV=\"local\" APP_DEBUG=\"true\" APP_URL=\"https://d51cbf95-8d8d-4177-aba6-cc5819929518-00-2oyeio9t1hbuo.sisko.replit.dev\" DB_CONNECTION=\"sqlite\" DB_DATABASE=\"database/database.sqlite\" php -S 0.0.0.0:5000 -t public & npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+[[ports]]
+localPort = 45897
+externalPort = 3000
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["bash", "-c", "mkdir -p storage/framework/{sessions,views,cache} && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -S 0.0.0.0:5000 -t public"]
+build = ["npm", "run", "build"]
