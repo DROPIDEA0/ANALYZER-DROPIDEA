@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 /*
@@ -27,7 +28,7 @@ Route::get('/', function () {
 
 // التوجيه المباشر لصفحة المحلل بعد تسجيل الدخول
 Route::get('/dashboard', function () {
-    return redirect()->route('website.analyzer');
+    return Redirect::route('website.analyzer');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
