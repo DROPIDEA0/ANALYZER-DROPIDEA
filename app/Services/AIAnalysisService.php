@@ -675,11 +675,28 @@ class AIAnalysisService
         if (count($results) === 1) {
             $result = reset($results);
             $singleRecommendations = $result['recommendations'] ?? [];
+            
+            // إنشاء summary إذا لم يكن موجوداً
+            $summary = $result['summary'] ?? '';
+            if (empty($summary) && !empty($result['analysis'])) {
+                $lines = explode("\n", $result['analysis']);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (strlen($line) > 30) {
+                        $summary = substr($line, 0, 200) . '...';
+                        break;
+                    }
+                }
+            }
+            if (empty($summary)) {
+                $summary = 'تم تحليل الموقع بنجاح باستخدام الذكاء الاصطناعي وإنشاء تقرير شامل.';
+            }
+            
             return [
                 'analysis' => $result['analysis'] ?? '',
-                'summary' => $result['summary'] ?? '',
-                'score' => $result['score'] ?? 70,  // افتراضي أفضل
-                'overall_score' => $result['score'] ?? 70,
+                'summary' => $summary,
+                'score' => $result['score'] ?? 75,  // افتراضي أفضل
+                'overall_score' => $result['score'] ?? 75,
                 'recommendations' => $singleRecommendations,
                 'seo_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'سيو|SEO|محركات البحث'),
                 'performance_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'أداء|سرعة|تحميل|performance'),

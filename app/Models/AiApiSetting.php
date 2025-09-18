@@ -63,6 +63,14 @@ class AiApiSetting extends Model
     }
 
     /**
+     * Accessor للحصول على has_api_key
+     */
+    public function getHasApiKeyAttribute(): bool
+    {
+        return !empty($this->api_key);
+    }
+
+    /**
      * الحصول على الإعدادات الافتراضية لكل مزود
      */
     public static function getDefaultSettings(string $provider): array
