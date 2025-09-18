@@ -43,8 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/analyzer', [WebsiteAnalyzerController::class, 'index'])->name('website.analyzer');
     Route::post('/analyzer/analyze', [WebsiteAnalyzerController::class, 'analyze'])->name('website.analyze');
     Route::get('/analyzer/history', [WebsiteAnalyzerController::class, 'history'])->name('website.history');
-    Route::get('/analyzer/{id}', [WebsiteAnalyzerController::class, 'show'])->name('website.show');
-    Route::get('/analyzer/{id}/pdf', [WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf');
+    Route::get('/analyzer/report/{id}', [WebsiteAnalyzerController::class, 'show'])->name('website.show')->where('id', '[0-9]+');
+    Route::get('/analyzer/report/{id}/pdf', [WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf')->where('id', '[0-9]+');
     
     // AI API Settings Routes
     Route::get('/ai-settings', [AiApiSettingController::class, 'index'])->name('ai-api-settings.index');

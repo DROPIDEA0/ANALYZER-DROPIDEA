@@ -61,8 +61,8 @@ class WebsiteAnalyzerController extends Controller
             // تحليل أساسي للموقع
             $basicAnalysis = $this->websiteAnalyzer->analyzeWebsite($request->url);
             
-            // تحليل التقنيات المستخدمة بالتفصيل
-            $technologies = $this->websiteAnalyzer->detectTechnologies($request->url);
+            // تحليل التقنيات المستخدمة بالتفصيل (مدمج في التحليل الأساسي)
+            $technologies = $basicAnalysis['technologies'] ?? [];
             
             $analysisData = [
                 'url' => $request->url,
