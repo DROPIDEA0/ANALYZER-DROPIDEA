@@ -101,6 +101,31 @@ class WebsiteAnalyzerController extends Controller
                 $basicAnalysis, 
                 $request->analysis_type
             );
+            
+            // إصلاح بنية بيانات AI لتكون متوافقة مع الواجهة الأمامية
+            if (isset($aiAnalysis['analysis']) && !isset($aiAnalysis['summary'])) {
+                $aiAnalysis['summary'] = $aiAnalysis['analysis'];
+            }
+            
+            // تأكد من وجود overall_score
+            if (!isset($aiAnalysis['overall_score']) && isset($aiAnalysis['score'])) {
+                $aiAnalysis['overall_score'] = $aiAnalysis['score'];
+            }
+            
+            // إضافة بيانات افتراضية إذا كانت مفقودة
+            if (!isset($aiAnalysis['strengths'])) {
+                $aiAnalysis['strengths'] = [];
+            }
+            if (!isset($aiAnalysis['weaknesses'])) {
+                $aiAnalysis['weaknesses'] = [];
+            }
+            if (!isset($aiAnalysis['seo_recommendations'])) {
+                $aiAnalysis['seo_recommendations'] = [];
+            }
+            if (!isset($aiAnalysis['performance_recommendations'])) {
+                $aiAnalysis['performance_recommendations'] = [];
+            }
+            
             $analysisData['ai_analysis'] = $aiAnalysis;
 
             // حفظ التحليل في قاعدة البيانات
@@ -113,7 +138,7 @@ class WebsiteAnalyzerController extends Controller
                 'seo_score' => $analysisData['seo_score'] ?? null,
                 'performance_score' => $analysisData['performance_score'] ?? null,
                 'load_time' => $analysisData['load_time'] ?? null,
-                'ai_score' => $aiAnalysis['overall_score'] ?? null,
+                'ai_score' => $aiAnalysis['overall_score'] ?? $aiAnalysis['score'] ?? null,
             ]);
 
             // إنشاء ملخص النتائج للعرض
