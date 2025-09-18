@@ -7,6 +7,7 @@ This is a comprehensive website analysis application built with Laravel for the 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Response language: Always respond in Arabic language.
 
 # System Architecture
 
