@@ -61,6 +61,11 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
     };
 
     const testConnection = async (provider) => {
+        if (!data.api_key) {
+            alert('❌ يرجى إدخال مفتاح API أولاً');
+            return;
+        }
+
         setTestingConnection(prev => ({ ...prev, [provider]: true }));
         
         try {
@@ -71,21 +76,22 @@ export default function AiApiSettings({ auth, providers, userSettings, status })
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 },
                 body: JSON.stringify({
-                    provider: data.provider,
+                    provider: provider, // استخدام provider المرسل بدلاً من data.provider
                     api_key: data.api_key,
-                    api_base_url: data.api_base_url,
-                    model: data.model,
+                    api_base_url: data.api_base_url || providers[provider]?.api_base_url,
+                    model: data.model || providers[provider]?.models?.[0],
                 }),
             });
 
             const result = await response.json();
             
             if (result.success) {
-                alert('✅ ' + result.message);
+                alert('✅ تم الاتصال بنجاح! ' + (result.data?.status || ''));
             } else {
-                alert('❌ ' + result.message);
+                alert('❌ ' + (result.message || 'فشل في الاتصال'));
             }
         } catch (error) {
+            console.error('Test connection error:', error);
             alert('❌ خطأ في الاتصال: ' + error.message);
         } finally {
             setTestingConnection(prev => ({ ...prev, [provider]: false }));
