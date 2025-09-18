@@ -32,6 +32,7 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 use App\Http\Controllers\WebsiteAnalyzerController;
+use App\Http\Controllers\AdvancedWebsiteAnalyzerController;
 use App\Http\Controllers\AiApiSettingController;
 
 Route::middleware('auth')->group(function () {
@@ -39,12 +40,20 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Website Analyzer Routes (محمية بتسجيل الدخول)
+    // Basic Website Analyzer Routes (النظام الأساسي)
     Route::get('/analyzer', [WebsiteAnalyzerController::class, 'index'])->name('website.analyzer');
     Route::post('/analyzer/analyze', [WebsiteAnalyzerController::class, 'analyze'])->name('website.analyze');
     Route::get('/analyzer/history', [WebsiteAnalyzerController::class, 'history'])->name('website.history');
     Route::get('/analyzer/report/{id}', [WebsiteAnalyzerController::class, 'show'])->name('website.show')->where('id', '[0-9]+');
     Route::get('/analyzer/report/{id}/pdf', [WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf')->where('id', '[0-9]+');
+    
+    // AnalyzerDropidea - Advanced Website Analyzer Routes (النظام المتقدم)
+    Route::prefix('dropidea')->group(function () {
+        Route::get('/', [AdvancedWebsiteAnalyzerController::class, 'index'])->name('analyzer.dropidea');
+        Route::post('/analyze', [AdvancedWebsiteAnalyzerController::class, 'analyze'])->name('analyzer.dropidea.analyze');
+        Route::post('/search-business', [AdvancedWebsiteAnalyzerController::class, 'searchBusiness'])->name('analyzer.dropidea.search');
+        Route::get('/analysis/{id}', [AdvancedWebsiteAnalyzerController::class, 'showAnalysis'])->name('analyzer.dropidea.show');
+    });
     
     // AI API Settings Routes
     Route::get('/ai-settings', [AiApiSettingController::class, 'index'])->name('ai-api-settings.index');
