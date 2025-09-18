@@ -31,24 +31,27 @@ Route::get('/dashboard', function () {
     return Redirect::route('website.analyzer');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+use App\Http\Controllers\WebsiteAnalyzerController;
+use App\Http\Controllers\AiApiSettingController;
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Website Analyzer Routes
-    Route::get('/analyzer', [App\Http\Controllers\WebsiteAnalyzerController::class, 'index'])->name('website.analyzer');
-    Route::post('/analyzer/analyze', [App\Http\Controllers\WebsiteAnalyzerController::class, 'analyze'])->name('website.analyze');
-    Route::get('/analyzer/history', [App\Http\Controllers\WebsiteAnalyzerController::class, 'history'])->name('website.history');
-    Route::get('/analyzer/{id}', [App\Http\Controllers\WebsiteAnalyzerController::class, 'show'])->name('website.show');
-    Route::get('/analyzer/{id}/pdf', [App\Http\Controllers\WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf');
+    // Website Analyzer Routes (محمية بتسجيل الدخول)
+    Route::get('/analyzer', [WebsiteAnalyzerController::class, 'index'])->name('website.analyzer');
+    Route::post('/analyzer/analyze', [WebsiteAnalyzerController::class, 'analyze'])->name('website.analyze');
+    Route::get('/analyzer/history', [WebsiteAnalyzerController::class, 'history'])->name('website.history');
+    Route::get('/analyzer/{id}', [WebsiteAnalyzerController::class, 'show'])->name('website.show');
+    Route::get('/analyzer/{id}/pdf', [WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf');
     
     // AI API Settings Routes
-    Route::get('/ai-settings', [App\Http\Controllers\AiApiSettingController::class, 'index'])->name('ai-api-settings.index');
-    Route::post('/ai-settings', [App\Http\Controllers\AiApiSettingController::class, 'store'])->name('ai-api-settings.store');
-    Route::post('/ai-settings/test', [App\Http\Controllers\AiApiSettingController::class, 'testConnection'])->name('ai-api-settings.test');
-    Route::patch('/ai-settings/{apiSetting}/toggle', [App\Http\Controllers\AiApiSettingController::class, 'toggleActive'])->name('ai-api-settings.toggle');
-    Route::delete('/ai-settings/{apiSetting}', [App\Http\Controllers\AiApiSettingController::class, 'destroy'])->name('ai-api-settings.destroy');
+    Route::get('/ai-settings', [AiApiSettingController::class, 'index'])->name('ai-api-settings.index');
+    Route::post('/ai-settings', [AiApiSettingController::class, 'store'])->name('ai-api-settings.store');
+    Route::post('/ai-settings/test', [AiApiSettingController::class, 'testConnection'])->name('ai-api-settings.test');
+    Route::patch('/ai-settings/{apiSetting}/toggle', [AiApiSettingController::class, 'toggleActive'])->name('ai-api-settings.toggle');
+    Route::delete('/ai-settings/{apiSetting}', [AiApiSettingController::class, 'destroy'])->name('ai-api-settings.destroy');
 });
 
 require __DIR__.'/auth.php';
