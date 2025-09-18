@@ -17,6 +17,38 @@ class AIAnalysisService
     }
 
     /**
+     * تنظيف النص من علامات الـ markdown
+     */
+    protected function cleanText($text)
+    {
+        if (!$text || !is_string($text)) {
+            return $text;
+        }
+        
+        // إزالة علامات markdown الشائعة
+        $text = preg_replace('/[#*]/', '', $text);
+        
+        // إزالة الفراغات الزائدة
+        $text = trim($text);
+        
+        return $text;
+    }
+
+    /**
+     * تنظيف مصفوفة من النصوص
+     */
+    protected function cleanTextArray($array)
+    {
+        if (!is_array($array)) {
+            return $array;
+        }
+        
+        return array_map(function($text) {
+            return $this->cleanText($text);
+        }, $array);
+    }
+
+    /**
      * تحميل إعدادات APIs للمستخدم الحالي
      */
     protected function loadUserApiSettings()
@@ -693,16 +725,16 @@ class AIAnalysisService
             }
             
             return [
-                'analysis' => $result['analysis'] ?? '',
-                'summary' => $summary,
+                'analysis' => $this->cleanText($result['analysis'] ?? ''),
+                'summary' => $this->cleanText($summary),
                 'score' => $result['score'] ?? 75,  // افتراضي أفضل
                 'overall_score' => $result['score'] ?? 75,
-                'recommendations' => $singleRecommendations,
-                'seo_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'سيو|SEO|محركات البحث'),
-                'performance_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'أداء|سرعة|تحميل|performance'),
-                'security_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'أمان|حماية|SSL|security'),
-                'ux_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'تجربة المستخدم|UX|UI|واجهة'),
-                'content_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'محتوى|نص|مقال|content'),
+                'recommendations' => $this->cleanTextArray($singleRecommendations),
+                'seo_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($singleRecommendations, 'سيو|SEO|محركات البحث')),
+                'performance_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($singleRecommendations, 'أداء|سرعة|تحميل|performance')),
+                'security_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($singleRecommendations, 'أمان|حماية|SSL|security')),
+                'ux_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($singleRecommendations, 'تجربة المستخدم|UX|UI|واجهة')),
+                'content_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($singleRecommendations, 'محتوى|نص|مقال|content')),
                 'marketing_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'تسويق|إعلان|ترويج|marketing'),
                 'competitor_insights' => $this->categorizeRecommendations($singleRecommendations, 'منافس|competition|competitor'),
                 'strengths' => $this->extractFromSingleResult($result, 'قوة|إيجابي|ممتاز|جيد|قوي|strength'),
@@ -743,16 +775,16 @@ class AIAnalysisService
         $uniqueRecommendations = array_unique($allRecommendations);
 
         return [
-            'analysis' => trim($combinedAnalysis),
-            'summary' => $this->generateCombinedSummary($results),
+            'analysis' => $this->cleanText(trim($combinedAnalysis)),
+            'summary' => $this->cleanText($this->generateCombinedSummary($results)),
             'score' => $averageScore,
             'overall_score' => $averageScore,
-            'recommendations' => array_values($uniqueRecommendations),
-            'seo_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'سيو|SEO|محركات البحث'),
-            'performance_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'أداء|سرعة|تحميل|performance'),
-            'security_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'أمان|حماية|SSL|security'),
-            'ux_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'تجربة المستخدم|UX|UI|واجهة'),
-            'content_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'محتوى|نص|مقال|content'),
+            'recommendations' => $this->cleanTextArray(array_values($uniqueRecommendations)),
+            'seo_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($uniqueRecommendations, 'سيو|SEO|محركات البحث')),
+            'performance_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($uniqueRecommendations, 'أداء|سرعة|تحميل|performance')),
+            'security_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($uniqueRecommendations, 'أمان|حماية|SSL|security')),
+            'ux_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($uniqueRecommendations, 'تجربة المستخدم|UX|UI|واجهة')),
+            'content_recommendations' => $this->cleanTextArray($this->categorizeRecommendations($uniqueRecommendations, 'محتوى|نص|مقال|content')),
             'marketing_strategies' => $this->categorizeRecommendations($uniqueRecommendations, 'تسويق|إعلان|ترويج|marketing'),
             'competitor_insights' => $this->categorizeRecommendations($uniqueRecommendations, 'منافس|competition|competitor'),
             'strengths' => $this->extractFromResults($results, 'قوة|إيجابي|ممتاز|جيد|قوي|strength'),

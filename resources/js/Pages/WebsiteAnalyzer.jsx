@@ -10,6 +10,18 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Function to clean markdown symbols
+    const cleanText = (text) => {
+        if (!text || typeof text !== 'string') return text;
+        return text.replace(/[#*]/g, '').trim();
+    };
+
+    // Safe map function to ensure arrays
+    const safeMap = (data, mapFn) => {
+        if (!data || !Array.isArray(data)) return [];
+        return data.map(mapFn);
+    };
+
     const { data, setData, post, processing, errors, reset } = useForm({
         url: '',
         region: 'global',
@@ -258,10 +270,10 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                         نقاط القوة
                                                     </h3>
                                                     <ul className="space-y-2">
-                                                        {analysis.strengths?.map((strength, index) => (
+                                                        {safeMap(analysis.strengths, (strength, index) => (
                                                             <li key={index} className="text-green-700 flex items-start">
                                                                 <span className="text-green-500 mr-2">•</span>
-                                                                {strength}
+                                                                {cleanText(strength)}
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -276,10 +288,10 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                         نقاط الضعف
                                                     </h3>
                                                     <ul className="space-y-2">
-                                                        {analysis.weaknesses?.map((weakness, index) => (
+                                                        {safeMap(analysis.weaknesses, (weakness, index) => (
                                                             <li key={index} className="text-red-700 flex items-start">
                                                                 <span className="text-red-500 mr-2">•</span>
-                                                                {weakness}
+                                                                {cleanText(weakness)}
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -305,8 +317,8 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                                 {category === 'hosting' && 'الاستضافة'}
                                                             </h4>
                                                             <div className="flex flex-wrap gap-2">
-                                                                {techs.map((tech, index) => (
-                                                                    <TechnologyBadge key={index} tech={tech} category={category} />
+                                                                {safeMap(techs, (tech, index) => (
+                                                                    <TechnologyBadge key={index} tech={cleanText(tech)} category={category} />
                                                                 ))}
                                                             </div>
                                                         </div>
@@ -327,7 +339,7 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                             {analysis.ai_analysis?.summary ? (
                                                 <div className="bg-blue-50 rounded-lg p-6">
                                                     <h4 className="font-semibold text-blue-800 mb-3">ملخص التحليل</h4>
-                                                    <p className="text-blue-700 whitespace-pre-line">{analysis.ai_analysis.summary}</p>
+                                                    <p className="text-blue-700 whitespace-pre-line">{cleanText(analysis.ai_analysis.summary)}</p>
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-8">
@@ -346,8 +358,8 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                     <div className="bg-blue-50 rounded-lg p-4">
                                                         <h4 className="font-semibold text-blue-800 mb-3">تحسين محركات البحث</h4>
                                                         <ul className="space-y-2">
-                                                            {analysis.detailed_sections.seo_recommendations.map((rec, index) => (
-                                                                <li key={index} className="text-blue-700 text-sm">{rec}</li>
+                                                            {safeMap(analysis.detailed_sections?.seo_recommendations, (rec, index) => (
+                                                                <li key={index} className="text-blue-700 text-sm">{cleanText(rec)}</li>
                                                             ))}
                                                         </ul>
                                                     </div>
@@ -357,8 +369,8 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                     <div className="bg-green-50 rounded-lg p-4">
                                                         <h4 className="font-semibold text-green-800 mb-3">تحسين الأداء</h4>
                                                         <ul className="space-y-2">
-                                                            {analysis.detailed_sections.performance_recommendations.map((rec, index) => (
-                                                                <li key={index} className="text-green-700 text-sm">{rec}</li>
+                                                            {safeMap(analysis.detailed_sections?.performance_recommendations, (rec, index) => (
+                                                                <li key={index} className="text-green-700 text-sm">{cleanText(rec)}</li>
                                                             ))}
                                                         </ul>
                                                     </div>
@@ -368,8 +380,8 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                     <div className="bg-red-50 rounded-lg p-4">
                                                         <h4 className="font-semibold text-red-800 mb-3">الأمان والحماية</h4>
                                                         <ul className="space-y-2">
-                                                            {analysis.detailed_sections.security_recommendations.map((rec, index) => (
-                                                                <li key={index} className="text-red-700 text-sm">{rec}</li>
+                                                            {safeMap(analysis.detailed_sections?.security_recommendations, (rec, index) => (
+                                                                <li key={index} className="text-red-700 text-sm">{cleanText(rec)}</li>
                                                             ))}
                                                         </ul>
                                                     </div>
@@ -379,8 +391,8 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                     <div className="bg-purple-50 rounded-lg p-4">
                                                         <h4 className="font-semibold text-purple-800 mb-3">تجربة المستخدم</h4>
                                                         <ul className="space-y-2">
-                                                            {analysis.detailed_sections.ux_recommendations.map((rec, index) => (
-                                                                <li key={index} className="text-purple-700 text-sm">{rec}</li>
+                                                            {safeMap(analysis.detailed_sections?.ux_recommendations, (rec, index) => (
+                                                                <li key={index} className="text-purple-700 text-sm">{cleanText(rec)}</li>
                                                             ))}
                                                         </ul>
                                                     </div>
@@ -392,10 +404,10 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                 <div className="bg-yellow-50 rounded-lg p-4">
                                                     <h4 className="font-semibold text-yellow-800 mb-3">توصيات عامة</h4>
                                                     <ul className="space-y-2">
-                                                        {analysis.recommendations.map((rec, index) => (
+                                                        {safeMap(analysis.recommendations, (rec, index) => (
                                                             <li key={index} className="text-yellow-700 flex items-start">
                                                                 <span className="text-yellow-500 mr-2">💡</span>
-                                                                {rec}
+                                                                {cleanText(rec)}
                                                             </li>
                                                         ))}
                                                     </ul>

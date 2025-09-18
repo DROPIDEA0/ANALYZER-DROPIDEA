@@ -14,11 +14,31 @@ class WebsiteAnalyzerService
     public function analyzeWebsite($url)
     {
         try {
-            // جلب محتوى الصفحة
-            $response = Http::timeout(30)->get($url);
+            // جلب محتوى الصفحة مع headers محسنة لتجنب الحظر
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language' => 'ar,en-US;q=0.7,en;q=0.3',
+                'Accept-Encoding' => 'gzip, deflate, br',
+                'DNT' => '1',
+                'Connection' => 'keep-alive',
+                'Upgrade-Insecure-Requests' => '1',
+            ])->timeout(30)->get($url);
             
             if (!$response->successful()) {
-                throw new \Exception('لا يمكن الوصول إلى الموقع');
+                // إعطاء رسالة أكثر تفصيلاً حسب نوع الخطأ
+                $status = $response->status();
+                if ($status == 503) {
+                    throw new \Exception('الموقع غير متاح حالياً (خطأ 503)');
+                } elseif ($status == 403) {
+                    throw new \Exception('الوصول مرفوض من قبل الموقع (خطأ 403)');
+                } elseif ($status == 404) {
+                    throw new \Exception('الصفحة غير موجودة (خطأ 404)');
+                } elseif ($status >= 500) {
+                    throw new \Exception('خطأ في خادم الموقع (خطأ ' . $status . ')');
+                } else {
+                    throw new \Exception('لا يمكن الوصول إلى الموقع (خطأ ' . $status . ')');
+                }
             }
 
             $html = $response->body();
@@ -64,7 +84,9 @@ class WebsiteAnalyzerService
         $start = microtime(true);
         
         try {
-            Http::timeout(10)->get($url);
+            Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            ])->timeout(10)->get($url);
             $end = microtime(true);
             return round(($end - $start) * 1000, 2); // بالميلي ثانية
         } catch (\Exception $e) {
