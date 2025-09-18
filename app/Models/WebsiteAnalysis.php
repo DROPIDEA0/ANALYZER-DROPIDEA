@@ -18,6 +18,7 @@ class WebsiteAnalysis extends Model
         'seo_score',
         'performance_score',
         'load_time',
+        'ai_score',
     ];
 
     protected $casts = [
