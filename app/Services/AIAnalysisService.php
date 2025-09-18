@@ -177,7 +177,14 @@ class AIAnalysisService
         ]);
 
         if ($response->successful()) {
-            return $response->json()['choices'][0]['message']['content'];
+            $analysisText = $response->json()['choices'][0]['message']['content'];
+            return [
+                'analysis' => $analysisText,
+                'summary' => $this->extractSummary($analysisText),
+                'score' => $this->extractScore($analysisText),
+                'recommendations' => $this->extractRecommendationsFromText($analysisText),
+                'provider' => 'OpenAI (' . $model . ')'
+            ];
         }
 
         throw new \Exception('OpenAI API request failed: ' . $response->body());
@@ -208,7 +215,14 @@ class AIAnalysisService
         ]);
 
         if ($response->successful()) {
-            return $response->json()['choices'][0]['message']['content'];
+            $analysisText = $response->json()['choices'][0]['message']['content'];
+            return [
+                'analysis' => $analysisText,
+                'summary' => $this->extractSummary($analysisText),
+                'score' => $this->extractScore($analysisText),
+                'recommendations' => $this->extractRecommendationsFromText($analysisText),
+                'provider' => 'OpenAI (default)'
+            ];
         }
 
         throw new \Exception('OpenAI API request failed: ' . $response->body());
@@ -235,7 +249,14 @@ class AIAnalysisService
         ]);
 
         if ($response->successful()) {
-            return $response->json()['content'][0]['text'];
+            $analysisText = $response->json()['content'][0]['text'];
+            return [
+                'analysis' => $analysisText,
+                'summary' => $this->extractSummary($analysisText),
+                'score' => $this->extractScore($analysisText),
+                'recommendations' => $this->extractRecommendationsFromText($analysisText),
+                'provider' => 'Claude (Anthropic)'
+            ];
         }
 
         throw new \Exception('Anthropic API request failed: ' . $response->body());
@@ -272,7 +293,14 @@ class AIAnalysisService
         ]);
 
         if ($response->successful()) {
-            return $response->json()['content'][0]['text'];
+            $analysisText = $response->json()['content'][0]['text'];
+            return [
+                'analysis' => $analysisText,
+                'summary' => $this->extractSummary($analysisText),
+                'score' => $this->extractScore($analysisText),
+                'recommendations' => $this->extractRecommendationsFromText($analysisText),
+                'provider' => 'Claude (' . $model . ')'
+            ];
         }
 
         throw new \Exception('Anthropic API request failed: ' . $response->body());
@@ -294,12 +322,20 @@ class AIAnalysisService
         $model = $setting->model ?: 'manus-ai';
 
         // محاكاة تحليل Manus - يجب استبدالها بالتكامل الفعلي
-        return "تحليل Manus AI:\n\n" .
+        $analysisText = "تحليل Manus AI:\n\n" .
                "تم تحليل الموقع باستخدام Manus AI وتم العثور على النقاط التالية:\n" .
                "- تحليل شامل للأداء والتقنيات\n" .
                "- توصيات محسنة للسيو\n" .
                "- تحليل تجربة المستخدم المتقدم\n" .
                "- استراتيجيات التحسين المبتكرة";
+               
+        return [
+            'analysis' => $analysisText,
+            'summary' => $this->extractSummary($analysisText),
+            'score' => 75, // نقطة افتراضية لـ Manus
+            'recommendations' => $this->extractRecommendationsFromText($analysisText),
+            'provider' => 'Manus AI (' . $model . ')'
+        ];
     }
 
     /**
@@ -582,11 +618,90 @@ class AIAnalysisService
 
         return [
             'analysis' => trim($combinedAnalysis),
+            'summary' => $this->generateCombinedSummary($results),
             'score' => $averageScore,
             'recommendations' => array_values($uniqueRecommendations),
             'provider' => implode(', ', $providers),
-            'providers_count' => count($results)
+            'providers_count' => count($results),
+            'overall_score' => $averageScore
         ];
+    }
+
+    /**
+     * استخراج ملخص من نص التحليل
+     */
+    private function extractSummary($text)
+    {
+        $lines = explode("\n", $text);
+        $summary = '';
+        $lineCount = 0;
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (strlen($line) > 20 && $lineCount < 3) {
+                $summary .= ($summary ? "\n" : "") . $line;
+                $lineCount++;
+            }
+        }
+        
+        return $summary ?: substr($text, 0, 200) . '...';
+    }
+
+    /**
+     * استخراج نقطة من نص التحليل
+     */
+    private function extractScore($text)
+    {
+        // البحث عن أرقام في النص قد تكون نقاط
+        if (preg_match('/(\d{1,2})\s*(%|درجة|نقطة|score)/ui', $text, $matches)) {
+            return (int) $matches[1];
+        }
+        
+        // تقييم بسيط بناءً على الكلمات الإيجابية والسلبية
+        $positiveWords = preg_match_all('/(ممتاز|جيد|قوي|مناسب|فعال|رائع)/ui', $text);
+        $negativeWords = preg_match_all('/(ضعيف|سيء|مشكلة|نقص|بطيء)/ui', $text);
+        
+        $baseScore = 70;
+        $score = $baseScore + ($positiveWords * 5) - ($negativeWords * 3);
+        
+        return max(0, min(100, $score));
+    }
+
+    /**
+     * استخراج التوصيات من نص التحليل
+     */
+    private function extractRecommendationsFromText($text)
+    {
+        $recommendations = [];
+        $lines = explode("\n", $text);
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (preg_match('/(توصية|يُنصح|يجب|اقتراح|تحسين)/ui', $line) && strlen($line) > 20) {
+                $recommendations[] = $line;
+            }
+        }
+        
+        return array_slice($recommendations, 0, 5); // أول 5 توصيات
+    }
+
+    /**
+     * إنشاء ملخص مدمج من عدة نتائج
+     */
+    private function generateCombinedSummary($results)
+    {
+        $summaries = [];
+        foreach ($results as $result) {
+            if (isset($result['summary']) && $result['summary']) {
+                $summaries[] = $result['summary'];
+            }
+        }
+        
+        if (empty($summaries)) {
+            return 'تم إنجاز تحليل شامل للموقع باستخدام الذكاء الاصطناعي';
+        }
+        
+        return implode("\n\n", array_slice($summaries, 0, 2)); // أول ملخصين
     }
 }
 

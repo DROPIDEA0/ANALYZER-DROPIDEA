@@ -35,6 +35,10 @@ waitForPort = 5000
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 37505
+externalPort = 3000
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "mkdir -p storage/framework/{sessions,views,cache} && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -S 0.0.0.0:5000 -t public"]
