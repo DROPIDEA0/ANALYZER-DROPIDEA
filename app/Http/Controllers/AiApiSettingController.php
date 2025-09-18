@@ -96,11 +96,12 @@ class AiApiSettingController extends Controller
         $user = Auth::user();
 
         // تحضير البيانات للتحديث
+        $defaultSettings = AiApiSetting::getDefaultSettings($request->provider);
         $updateData = [
-            'api_base_url' => $request->api_base_url,
-            'model' => $request->model,
+            'api_base_url' => $request->api_base_url ?: $defaultSettings['api_base_url'],
+            'model' => $request->model ?: $defaultSettings['model'],
             'is_active' => $request->boolean('is_active'),
-            'settings' => $request->settings ?: AiApiSetting::getDefaultSettings($request->provider),
+            'settings' => $request->settings ?: $defaultSettings,
         ];
 
         // إضافة api_key فقط إذا تم إرساله
@@ -202,13 +203,25 @@ class AiApiSettingController extends Controller
      */
     private function performApiTest(string $provider, string $apiKey, ?string $baseUrl, ?string $model): array
     {
+        // حماية من SSRF - استخدام URLs الافتراضية المعتمدة فقط
+        $allowedBaseUrls = [
+            'openai' => 'https://api.openai.com/v1',
+            'anthropic' => 'https://api.anthropic.com',
+            'manus' => 'https://api.manus.im',
+        ];
+        
+        $safeBaseUrl = $allowedBaseUrls[$provider] ?? null;
+        if (!$safeBaseUrl) {
+            throw new \Exception('مزود غير مدعوم');
+        }
+
         switch ($provider) {
             case 'openai':
-                return $this->testOpenAI($apiKey, $baseUrl, $model);
+                return $this->testOpenAI($apiKey, $safeBaseUrl, $model);
             case 'anthropic':
-                return $this->testAnthropic($apiKey, $baseUrl, $model);
+                return $this->testAnthropic($apiKey, $safeBaseUrl, $model);
             case 'manus':
-                return $this->testManus($apiKey, $baseUrl, $model);
+                return $this->testManus($apiKey, $safeBaseUrl, $model);
             default:
                 throw new \Exception('مزود غير مدعوم');
         }
@@ -220,7 +233,7 @@ class AiApiSettingController extends Controller
     private function testOpenAI(string $apiKey, ?string $baseUrl, ?string $model): array
     {
         $baseUrl = $baseUrl ?: 'https://api.openai.com/v1';
-        $model = $model ?: 'gpt-3.5-turbo';
+        $model = $model ?: 'gpt-4o-mini';
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apiKey,

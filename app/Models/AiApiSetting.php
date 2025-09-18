@@ -69,8 +69,8 @@ class AiApiSetting extends Model
     {
         return match ($provider) {
             'openai' => [
-                'model' => 'gpt-4',
-                'max_tokens' => 4000,
+                'model' => 'gpt-4o-mini',
+                'max_tokens' => 1200,
                 'temperature' => 0.7,
                 'api_base_url' => 'https://api.openai.com/v1',
             ],
@@ -100,19 +100,22 @@ class AiApiSetting extends Model
                 'name' => 'OpenAI GPT',
                 'description' => 'تحليل المحتوى والسيو باستخدام GPT-4',
                 'icon' => '🧠',
-                'models' => ['gpt-4', 'gpt-3.5-turbo', 'gpt-4-turbo'],
+                'models' => ['gpt-4o-mini', 'gpt-4o', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4-turbo'],
+                'api_base_url' => 'https://api.openai.com/v1',
             ],
             'anthropic' => [
                 'name' => 'Anthropic Claude',
                 'description' => 'تحليل تجربة المستخدم والمحتوى',
                 'icon' => '🤖',
                 'models' => ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+                'api_base_url' => 'https://api.anthropic.com',
             ],
             'manus' => [
                 'name' => 'Manus AI',
                 'description' => 'تحليل شامل للأداء والتقنيات',
                 'icon' => '🔮',
                 'models' => ['manus-ai', 'manus-pro'],
+                'api_base_url' => 'https://api.manus.im',
             ],
         ];
     }

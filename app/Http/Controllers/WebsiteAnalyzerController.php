@@ -154,6 +154,7 @@ class WebsiteAnalyzerController extends Controller
         // دمج نقاط القوة والضعف من الذكاء الاصطناعي
         if (isset($analysisData['ai_analysis'])) {
             $aiAnalysis = $analysisData['ai_analysis'];
+            $result['ai_summary'] = $aiAnalysis['analysis'] ?? $aiAnalysis['summary'] ?? '';
             
             $result['strengths'] = array_merge(
                 $result['strengths'], 
