@@ -137,14 +137,14 @@ class WebsiteAnalyzerController extends Controller
     {
         $result = [
             'id' => $analysisId,
-            'url' => $analysisData['url'],
-            'seo_score' => $analysisData['seo_score'] ?? 0,
-            'performance_score' => $analysisData['performance_score'] ?? 0,
-            'ai_score' => $analysisData['ai_analysis']['overall_score'] ?? 0,
-            'load_time' => $analysisData['load_time'] ?? 0,
+            'url' => $analysisData['url'] ?? '',
+            'seo_score' => $analysisData['seo_score'] ?? $analysisData['seo_analysis']['score'] ?? 0,
+            'performance_score' => $analysisData['performance_score'] ?? $analysisData['performance_analysis']['score'] ?? 0,
+            'ai_score' => $analysisData['ai_analysis']['overall_score'] ?? $analysisData['ai_analysis']['score'] ?? 0,
+            'load_time' => $analysisData['load_time'] ?? $analysisData['performance_analysis']['load_time'] ?? 0,
             'competitors_count' => $analysisData['competitors_count'] ?? 0,
             'technologies' => $analysisData['technologies'] ?? [],
-            'ai_analysis' => $analysisData['ai_analysis'] ?? [],
+            'ai_analysis' => [],
             'strengths' => [],
             'weaknesses' => [],
             'recommendations' => [],
@@ -155,11 +155,20 @@ class WebsiteAnalyzerController extends Controller
         if (isset($analysisData['ai_analysis'])) {
             $aiAnalysis = $analysisData['ai_analysis'];
             
-            // إضافة summary إلى ai_analysis للواجهة الأمامية
-            $result['ai_analysis']['summary'] = $aiAnalysis['summary'] ?? $aiAnalysis['analysis'] ?? '';
-            $result['ai_analysis']['overall_score'] = $aiAnalysis['overall_score'] ?? 0;
+            // تحضير ai_analysis للواجهة الأمامية
+            $result['ai_analysis'] = [
+                'summary' => $aiAnalysis['summary'] ?? $aiAnalysis['analysis'] ?? 'تم تحليل الموقع باستخدام الذكاء الاصطناعي',
+                'overall_score' => $aiAnalysis['overall_score'] ?? $aiAnalysis['score'] ?? 0,
+                'analysis' => $aiAnalysis['analysis'] ?? '',
+                'strengths' => $aiAnalysis['strengths'] ?? [],
+                'weaknesses' => $aiAnalysis['weaknesses'] ?? [],
+                'seo_recommendations' => $aiAnalysis['seo_recommendations'] ?? [],
+                'performance_recommendations' => $aiAnalysis['performance_recommendations'] ?? [],
+                'security_recommendations' => $aiAnalysis['security_recommendations'] ?? [],
+                'ux_recommendations' => $aiAnalysis['ux_recommendations'] ?? []
+            ];
             
-            $result['ai_summary'] = $aiAnalysis['analysis'] ?? $aiAnalysis['summary'] ?? '';
+            $result['ai_summary'] = $result['ai_analysis']['summary'];
             
             $result['strengths'] = array_merge(
                 $result['strengths'], 
@@ -208,9 +217,11 @@ class WebsiteAnalyzerController extends Controller
             $result['technologies_summary'] = $techSummary;
         }
 
-        // تحليل السيو التقليدي
+        // إضافة بيانات SEO للواجهة الأمامية
         if (isset($analysisData['seo_analysis'])) {
             $seoAnalysis = $analysisData['seo_analysis'];
+            
+            $result['seo_analysis'] = $seoAnalysis;
             
             if ($seoAnalysis['score'] >= 80) {
                 $result['strengths'][] = 'تحسين محركات البحث ممتاز (' . $seoAnalysis['score'] . '/100)';
@@ -224,6 +235,20 @@ class WebsiteAnalyzerController extends Controller
             } else {
                 $result['weaknesses'][] = 'لا يحتوي على وصف تعريفي';
                 $result['recommendations'][] = 'إضافة وصف تعريفي جذاب لجميع الصفحات';
+            }
+        }
+
+        // إضافة بيانات الأداء للواجهة الأمامية
+        if (isset($analysisData['performance_analysis'])) {
+            $perfAnalysis = $analysisData['performance_analysis'];
+            
+            $result['performance_analysis'] = $perfAnalysis;
+            
+            if ($perfAnalysis['load_time'] <= 2.0) {
+                $result['strengths'][] = 'سرعة تحميل ممتازة (' . $perfAnalysis['load_time'] . ' ثانية)';
+            } elseif ($perfAnalysis['load_time'] > 5.0) {
+                $result['weaknesses'][] = 'سرعة التحميل بطيئة (' . $perfAnalysis['load_time'] . ' ثانية)';
+                $result['recommendations'][] = 'تحسين كود الموقع وتحسين استخدام الذاكرة';
             }
         }
 
