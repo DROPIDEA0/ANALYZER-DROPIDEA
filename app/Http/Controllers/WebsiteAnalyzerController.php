@@ -62,7 +62,7 @@ class WebsiteAnalyzerController extends Controller
             $basicAnalysis = $this->websiteAnalyzer->analyzeWebsite($request->url);
             
             // تحليل التقنيات المستخدمة بالتفصيل
-            $technologies = $this->aiAnalyzer->analyzeTechnologies($request->url);
+            $technologies = $this->websiteAnalyzer->detectTechnologies($request->url);
             
             $analysisData = [
                 'url' => $request->url,

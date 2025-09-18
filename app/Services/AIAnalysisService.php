@@ -583,9 +583,28 @@ class AIAnalysisService
             ];
         }
 
-        // إذا كان هناك نتيجة واحدة فقط
+        // إذا كان هناك نتيجة واحدة فقط، قم بتطبيق نفس التنسيق
         if (count($results) === 1) {
-            return reset($results);
+            $result = reset($results);
+            $singleRecommendations = $result['recommendations'] ?? [];
+            return [
+                'analysis' => $result['analysis'] ?? '',
+                'summary' => $result['summary'] ?? '',
+                'score' => $result['score'] ?? 0,
+                'overall_score' => $result['score'] ?? 0,
+                'recommendations' => $singleRecommendations,
+                'seo_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'سيو|SEO|محركات البحث'),
+                'performance_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'أداء|سرعة|تحميل|performance'),
+                'security_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'أمان|حماية|SSL|security'),
+                'ux_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'تجربة المستخدم|UX|UI|واجهة'),
+                'content_recommendations' => $this->categorizeRecommendations($singleRecommendations, 'محتوى|نص|مقال|content'),
+                'marketing_strategies' => $this->categorizeRecommendations($singleRecommendations, 'تسويق|إعلان|ترويج|marketing'),
+                'competitor_insights' => $this->categorizeRecommendations($singleRecommendations, 'منافس|competition|competitor'),
+                'strengths' => $this->extractFromSingleResult($result, 'قوة|إيجابي|ممتاز|جيد|قوي|strength'),
+                'weaknesses' => $this->extractFromSingleResult($result, 'ضعف|سلبي|مشكلة|نقص|weakness|weak'),
+                'provider' => $result['provider'] ?? 'unknown',
+                'providers_count' => 1
+            ];
         }
 
         // دمج النتائج من عدة مزودين
@@ -620,10 +639,19 @@ class AIAnalysisService
             'analysis' => trim($combinedAnalysis),
             'summary' => $this->generateCombinedSummary($results),
             'score' => $averageScore,
+            'overall_score' => $averageScore,
             'recommendations' => array_values($uniqueRecommendations),
+            'seo_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'سيو|SEO|محركات البحث'),
+            'performance_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'أداء|سرعة|تحميل|performance'),
+            'security_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'أمان|حماية|SSL|security'),
+            'ux_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'تجربة المستخدم|UX|UI|واجهة'),
+            'content_recommendations' => $this->categorizeRecommendations($uniqueRecommendations, 'محتوى|نص|مقال|content'),
+            'marketing_strategies' => $this->categorizeRecommendations($uniqueRecommendations, 'تسويق|إعلان|ترويج|marketing'),
+            'competitor_insights' => $this->categorizeRecommendations($uniqueRecommendations, 'منافس|competition|competitor'),
+            'strengths' => $this->extractFromResults($results, 'قوة|إيجابي|ممتاز|جيد|قوي|strength'),
+            'weaknesses' => $this->extractFromResults($results, 'ضعف|سلبي|مشكلة|نقص|weakness|weak'),
             'provider' => implode(', ', $providers),
-            'providers_count' => count($results),
-            'overall_score' => $averageScore
+            'providers_count' => count($results)
         ];
     }
 
@@ -702,6 +730,58 @@ class AIAnalysisService
         }
         
         return implode("\n\n", array_slice($summaries, 0, 2)); // أول ملخصين
+    }
+
+    /**
+     * استخراج معلومات من نتيجة واحدة
+     */
+    private function extractFromSingleResult($result, $pattern)
+    {
+        $extracted = [];
+        if (isset($result['analysis'])) {
+            $lines = explode("\n", $result['analysis']);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (preg_match("/" . $pattern . "/ui", $line) && strlen($line) > 15) {
+                    $extracted[] = $line;
+                }
+            }
+        }
+        return array_unique(array_slice($extracted, 0, 3));
+    }
+
+    /**
+     * تصنيف التوصيات حسب النوع
+     */
+    private function categorizeRecommendations($recommendations, $pattern)
+    {
+        $categorized = [];
+        foreach ($recommendations as $rec) {
+            if (preg_match("/" . $pattern . "/ui", $rec)) {
+                $categorized[] = $rec;
+            }
+        }
+        return array_slice($categorized, 0, 3); // أول 3 توصيات لكل فئة
+    }
+
+    /**
+     * استخراج معلومات من نتائج متعددة
+     */
+    private function extractFromResults($results, $pattern)
+    {
+        $extracted = [];
+        foreach ($results as $result) {
+            if (isset($result['analysis'])) {
+                $lines = explode("\n", $result['analysis']);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (preg_match("/" . $pattern . "/ui", $line) && strlen($line) > 15) {
+                        $extracted[] = $line;
+                    }
+                }
+            }
+        }
+        return array_unique(array_slice($extracted, 0, 3));
     }
 }
 
