@@ -358,69 +358,497 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
 
                     {/* عرض النتائج */}
                     {analysis && (
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-xl shadow-sm border p-6">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                                    {analysis.type === 'business_analysis' ? 'تحليل العمل التجاري' : 'تحليل الموقع'}
-                                </h2>
+                        <div className="space-y-8">
+                            {/* رأس التقرير */}
+                            <div className="bg-white rounded-xl shadow-lg border p-8 text-center">
+                                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
+                                    <h1 className="text-3xl font-bold mb-2">تقرير تحليل الأعمال</h1>
+                                    <p className="text-blue-100">تحليل شامل ومفصل لأداء نشاطك التجاري</p>
+                                </div>
                                 
-                                {analysis.type === 'business_analysis' && (
-                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                                        <h3 className="font-semibold text-green-900 mb-2">{analysis.business_name}</h3>
-                                        <p className="text-green-700">
-                                            فئة: {businessCategories.find(cat => cat.value === analysis.business_category)?.label || analysis.business_category}
-                                        </p>
-                                        <p className="text-green-700">الدولة: {analysis.country}</p>
-                                        <div className="mt-3">
-                                            <span className="text-2xl font-bold text-green-800">{analysis.overall_score}%</span>
-                                            <span className="text-green-600 mr-2">النتيجة الإجمالية</span>
+                                <div className="text-sm text-gray-500 mb-2">
+                                    تاريخ التقرير: {new Date().toLocaleDateString('ar-SA', { 
+                                        year: 'numeric', month: 'long', day: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* معلومات النشاط التجاري */}
+                            {analysis.type === 'business_analysis' && analysis.gmb_data && (
+                                <div className="bg-white rounded-xl shadow-lg border p-8">
+                                    <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">معلومات النشاط التجاري</h2>
+                                    
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-3xl font-bold text-blue-900 mb-4">{analysis.business_name}</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center border-b pb-2">
+                                                <span className="font-semibold text-gray-700">التقييم:</span>
+                                                <div className="text-left">
+                                                    <div className="flex items-center">
+                                                        <span className="text-yellow-400 ml-1">⭐</span>
+                                                        <span className="font-bold">{analysis.gmb_data.rating || 'غير محدد'}</span>
+                                                        <span className="text-gray-500 mr-2">
+                                                            ({analysis.gmb_data.reviews_count || 0} تقييمات)
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        {analysis.gmb_data.rating >= 4.5 ? 'تقييم ممتاز' : 
+                                                         analysis.gmb_data.rating >= 4.0 ? 'تقييم جيد جداً مع إمكانية للتحسين' : 
+                                                         analysis.gmb_data.rating >= 3.0 ? 'تقييم جيد' : 'يحتاج تحسين'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between items-start border-b pb-2">
+                                                <span className="font-semibold text-gray-700">العنوان:</span>
+                                                <div className="text-left max-w-xs">
+                                                    <p className="text-gray-800">{analysis.gmb_data.address || 'غير محدد'}</p>
+                                                    <p className="text-sm text-gray-600">{data.country}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-start border-b pb-2">
+                                                <span className="font-semibold text-gray-700">الموقع:</span>
+                                                <div className="text-left max-w-xs">
+                                                    <p className="text-blue-600 break-all">{analysis.gmb_data.website || 'غير متوفر'}</p>
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        {analysis.gmb_data.website ? 'منصة رقمية لعرض الخدمات والتفاعل مع العملاء' : 'لا يوجد موقع إلكتروني'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between items-center border-b pb-2">
+                                                <span className="font-semibold text-gray-700">الهاتف:</span>
+                                                <div className="text-left">
+                                                    <p className="text-gray-800 font-mono">{analysis.gmb_data.phone || 'غير متوفر'}</p>
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        {analysis.gmb_data.phone ? 'متاح للتواصل المباشر مع العملاء' : 'رقم الهاتف غير متوفر'}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
+                            )}
 
-                                {analysis.gmb_data && (
+                            {/* النتيجة الإجمالية */}
+                            <div className="bg-white rounded-xl shadow-lg border p-8">
+                                <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">النتيجة الإجمالية</h2>
+                                
+                                <div className="text-center">
+                                    <h3 className="text-xl font-bold text-gray-800 mb-6">تقييم الأداء العام</h3>
+                                    
+                                    {/* دائرة النتيجة */}
+                                    <div className="flex justify-center items-center mb-6">
+                                        <div className="relative w-48 h-48">
+                                            <div className="w-full h-full rounded-full border-8 border-gray-200 relative overflow-hidden">
+                                                <div 
+                                                    className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ${
+                                                        analysis.overall_score >= 85 ? 'bg-green-500' :
+                                                        analysis.overall_score >= 70 ? 'bg-yellow-500' :
+                                                        analysis.overall_score >= 50 ? 'bg-orange-500' : 'bg-red-500'
+                                                    }`}
+                                                    style={{ height: `${analysis.overall_score || 0}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-4xl font-bold text-gray-900">{analysis.overall_score || 0}</span>
+                                                <span className="text-lg text-gray-600">من 100</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <span className={`text-2xl font-bold ${
+                                            analysis.overall_score >= 85 ? 'text-green-600' :
+                                            analysis.overall_score >= 70 ? 'text-yellow-600' :
+                                            analysis.overall_score >= 50 ? 'text-orange-600' : 'text-red-600'
+                                        }`}>
+                                            {analysis.overall_score >= 85 ? 'ممتاز' :
+                                             analysis.overall_score >= 70 ? 'جيد جداً' :
+                                             analysis.overall_score >= 50 ? 'جيد' : 'يحتاج تحسين'}
+                                        </span>
+                                    </div>
+
+                                    <p className="text-gray-700 max-w-2xl mx-auto">
+                                        {analysis.overall_score >= 85 ? 'أداء استثنائي! نشاطك التجاري يتفوق في هذا المجال ويمكن اعتباره مثالاً يحتذى به.' :
+                                         analysis.overall_score >= 70 ? 'أداء جيد جداً مع وجود فرص للتحسين والنمو.' :
+                                         analysis.overall_score >= 50 ? 'أداء مقبول ولكن يحتاج إلى تحسينات في عدة مجالات.' :
+                                         'هناك حاجة ملحة لتحسينات شاملة لتطوير الأداء.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* تفاصيل التقييم بالفئات - للأعمال التجارية */}
+                            {analysis.type === 'business_analysis' && (
+                                <div className="bg-white rounded-xl shadow-lg border p-8">
+                                    <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">تفاصيل التقييم بالفئات</h2>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* صفحة حجز مباشر */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">هل يوجد صفحة حجز مباشر اونلاين مع تقويم؟</h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    analysis.gmb_data?.website ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {analysis.gmb_data?.website ? 'نعم' : 'لا'}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {analysis.gmb_data?.website ? 
+                                                    'ممتاز! نظام الحجز الإلكتروني يوفر الوقت والجهد لك وللعملاء ويقلل من فرص فقدان المواعيد.' :
+                                                    'لا يتوفر نظام حجز إلكتروني. هذا يؤثر على سهولة الحجز للعملاء.'
+                                                }
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    {analysis.gmb_data?.website ? 
+                                                        'تأكد من سهولة استخدام نظام الحجز وإرسال تذكيرات للعملاء قبل موعدهم.' :
+                                                        'فكر في إضافة نظام حجز إلكتروني لتسهيل العملية على العملاء.'
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* موقع إلكتروني */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">هل يوجد موقع إلكتروني؟</h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    analysis.gmb_data?.website ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {analysis.gmb_data?.website ? 'نعم' : 'لا'}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {analysis.gmb_data?.website ? 
+                                                    'ممتاز! هذا العنصر متوفر ويعمل بشكل جيد في نشاطك التجاري. هذا يساهم إيجابياً في جذب العملاء وبناء الثقة معهم.' :
+                                                    'لا يتوفر موقع إلكتروني. هذا يحد من إمكانية العملاء للتعرف على خدماتك.'
+                                                }
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    {analysis.gmb_data?.website ? 
+                                                        'حافظ على هذا المستوى واستمر في تطويره للبقاء متقدماً على المنافسين.' :
+                                                        'أنشئ موقعاً إلكترونياً يعرض خدماتك ومعلومات التواصل.'
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* صفحة جوجل ماب */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">هل عندك صفحة جوجل ماب؟</h4>
+                                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">نعم</span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                ممتاز! هذا العنصر متوفر ويعمل بشكل جيد في نشاطك التجاري. هذا يساهم إيجابياً في جذب العملاء وبناء الثقة معهم.
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    حافظ على هذا المستوى واستمر في تطويره للبقاء متقدماً على المنافسين.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* التقييمات والنجوم */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">عدد التقييمات ومتوسط النجوم</h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    analysis.gmb_data?.rating >= 4.0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                }`}>
+                                                    {analysis.gmb_data?.rating >= 4.0 ? 'ممتاز' : 'جيد'}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {analysis.gmb_data?.rating >= 4.0 ? 
+                                                    'ممتاز! هذا العنصر متوفر ويعمل بشكل جيد في نشاطك التجاري. هذا يساهم إيجابياً في جذب العملاء وبناء الثقة معهم.' :
+                                                    'التقييمات جيدة ولكن يمكن تحسينها من خلال تطوير جودة الخدمة.'
+                                                }
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    شجع العملاء الراضين على ترك تقييمات إيجابية واهتم بالرد على جميع التقييمات.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* ساعات العمل */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">ساعات العمل</h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    analysis.gmb_data?.business_hours !== 'غير متوفرة' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {analysis.gmb_data?.business_hours !== 'غير متوفرة' ? 'متوفرة' : 'غير متوفرة'}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {analysis.gmb_data?.business_hours !== 'غير متوفرة' ? 
+                                                    'ممتاز! ساعات العمل واضحة ومحدثة، مما يساعد العملاء على معرفة أوقات توفرك للخدمة.' :
+                                                    'ساعات العمل غير واضحة. هذا قد يسبب التباساً للعملاء.'
+                                                }
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    تأكد من تحديث ساعات العمل في المواسم المختلفة أو الإجازات لتجنب إزعاج العملاء.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* رقم الاتصال */}
+                                        <div className="border border-gray-200 rounded-lg p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-semibold text-gray-800">رقم اتصال</h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    analysis.gmb_data?.phone ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {analysis.gmb_data?.phone ? 'متوفر' : 'غير متوفر'}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {analysis.gmb_data?.phone ? 
+                                                    'ممتاز! هذا العنصر متوفر ويعمل بشكل جيد في نشاطك التجاري. هذا يساهم إيجابياً في جذب العملاء وبناء الثقة معهم.' :
+                                                    'رقم الهاتف غير متوفر. هذا يجعل التواصل المباشر صعباً على العملاء.'
+                                                }
+                                            </p>
+                                            <div className="flex items-start">
+                                                <span className="text-yellow-500 ml-2">💡</span>
+                                                <p className="text-sm text-gray-700">
+                                                    {analysis.gmb_data?.phone ? 
+                                                        'حافظ على هذا المستوى واستمر في تطويره للبقاء متقدماً على المنافسين.' :
+                                                        'أضف رقم هاتف واضح ومحدث للتواصل المباشر مع العملاء.'
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* التوصيات الاستراتيجية */}
+                            <div className="bg-white rounded-xl shadow-lg border p-8">
+                                <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">التوصيات الاستراتيجية</h2>
+                                
+                                <div className="space-y-8">
+                                    {/* التوصية الأولى */}
+                                    <div className="border border-orange-200 rounded-lg p-6 bg-orange-50">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center">
+                                                <span className="bg-orange-500 text-white text-xl font-bold rounded-full w-8 h-8 flex items-center justify-center ml-3">#1</span>
+                                                <span className="text-orange-700 font-medium">أولوية عالية</span>
+                                            </div>
+                                            <span className="text-2xl">💼</span>
+                                        </div>
+                                        
+                                        <h3 className="text-xl font-bold text-orange-900 mb-4">تحسين تجربة العميل</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="font-semibold text-orange-800 mb-2">الوصف التفصيلي:</h4>
+                                                <p className="text-gray-700">المؤشر الأول لزيادة المبيعات هو جودة تجربة العميل</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="font-semibold text-orange-800 mb-2">التأثير المتوقع والفوائد:</h4>
+                                                <p className="text-gray-700 text-sm leading-relaxed">
+                                                    تسهيل الحجز السريع على العميل هو أهم نقطة في زيادة مبيعاتك وتقليل الأسئلة والرسائل على الواتس اب. 
+                                                    عدم وضوح تفاصيل الخدمة سيجعل العميل يسأل في الواتس اب وهذا يؤخر البيعة، ويزيد الضغط على خدمة العملاء. 
+                                                    إتاحة الدفع الاونلاين وخدمات التقسيط هي أبسط طريقة لمضاعفة المبيعات بشكل مباشر.
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="font-semibold text-orange-800 mb-2">خطوات التنفيذ المفصلة:</h4>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">🌐</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 1: تحليل الموقع الالكتروني وتطويره</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">📝</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 2: وضوح وصف الخدمات وتفاصيلها</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">💳</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 3: تفعيل الدفع الالكتروني وخدمات التقسيط</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">💬</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 4: الربط مع الواتس اب للتواصل السريع</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="bg-orange-200 border border-orange-300 rounded p-3">
+                                                <p className="text-orange-800 text-sm font-medium">
+                                                    عاجل - ينصح بالبدء في تنفيذ هذه التوصية فوراً لتحقيق أقصى استفادة.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* التوصية الثانية */}
+                                    <div className="border border-blue-200 rounded-lg p-6 bg-blue-50">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center">
+                                                <span className="bg-blue-500 text-white text-xl font-bold rounded-full w-8 h-8 flex items-center justify-center ml-3">#2</span>
+                                                <span className="text-blue-700 font-medium">أولوية عالية</span>
+                                            </div>
+                                            <span className="text-2xl">🗺️</span>
+                                        </div>
+                                        
+                                        <h3 className="text-xl font-bold text-blue-900 mb-4">تحليل جوجل ماب</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="font-semibold text-blue-800 mb-2">الوصف التفصيلي:</h4>
+                                                <p className="text-gray-700">هل سهل البحث عنك في خرائط جوجل ماب؟</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="font-semibold text-blue-800 mb-2">التأثير المتوقع والفوائد:</h4>
+                                                <p className="text-gray-700 text-sm">
+                                                    توفير المعلومات المطلوبة والتفاصيل كاملة تساعدك على الظهور بشكل متكرر للعملاء الباحثين عن الخدمة في تطبيق جوجل ماب.
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="font-semibold text-blue-800 mb-2">خطوات التنفيذ المفصلة:</h4>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">📍</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 1: تحديث جميع معلومات Google Business Profile</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">📷</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 2: إضافة صور احترافية للخدمات والمكان</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <span className="ml-2">⏰</span>
+                                                        <span className="text-sm text-gray-700">الخطوة 3: تحديث ساعات العمل وأرقام التواصل</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* نقاط القوة والضعف */}
+                            <div className="bg-white rounded-xl shadow-lg border p-8">
+                                <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">نقاط القوة والضعف</h2>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-green-700 mb-4 text-center">نقاط القوة</h3>
+                                        <div className="space-y-3">
+                                            {analysis.gmb_data?.website && (
+                                                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                                                    <span className="text-green-800">يوجد موقع إلكتروني</span>
+                                                    <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                                                <span className="text-green-800">صفحة جوجل ماب متوفرة</span>
+                                                <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
+                                            </div>
+                                            {analysis.gmb_data?.phone && (
+                                                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                                                    <span className="text-green-800">رقم التواصل متوفر</span>
+                                                    <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                                                </div>
+                                            )}
+                                            {analysis.gmb_data?.rating >= 4.0 && (
+                                                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                                                    <span className="text-green-800">تقييمات جيدة</span>
+                                                    <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-xl font-bold text-red-700 mb-4 text-center">نقاط الضعف</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded">
+                                                <span className="text-red-800">لم نجد دفع عبر Apple Pay</span>
+                                                <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
+                                            </div>
+                                            <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded">
+                                                <span className="text-red-800">خدمات التقسيط غير متوفرة</span>
+                                                <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
+                                            </div>
+                                            {!analysis.gmb_data?.website && (
+                                                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded">
+                                                    <span className="text-red-800">لا يوجد موقع إلكتروني</span>
+                                                    <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                                                </div>
+                                            )}
+                                            {analysis.gmb_data?.business_hours === 'غير متوفرة' && (
+                                                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded">
+                                                    <span className="text-red-800">ساعات العمل غير واضحة</span>
+                                                    <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* عرض تحليل الموقع العادي */}
+                            {analysis.type !== 'business_analysis' && (
+                                <div className="bg-white rounded-xl shadow-lg border p-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-4">تحليل الموقع</h2>
+                                    
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                            <h4 className="font-semibold text-blue-900 mb-1">التقييم</h4>
+                                            <h4 className="font-semibold text-blue-900 mb-1">النتيجة الإجمالية</h4>
                                             <div className="flex items-center">
-                                                <span className="text-yellow-400 ml-1">⭐</span>
-                                                <span className="font-bold">{analysis.gmb_data.rating || 'غير محدد'}</span>
-                                                {analysis.gmb_data.reviews_count > 0 && (
-                                                    <span className="text-gray-500 mr-1">({analysis.gmb_data.reviews_count} مراجعة)</span>
-                                                )}
+                                                <span className="text-2xl font-bold text-blue-800">{analysis.overall_score || 'غير محدد'}%</span>
                                             </div>
                                         </div>
 
                                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                            <h4 className="font-semibold text-purple-900 mb-1">الموقع الإلكتروني</h4>
-                                            <span className={`text-sm ${analysis.gmb_data.website ? 'text-green-600' : 'text-red-600'}`}>
-                                                {analysis.gmb_data.website ? '✓ متوفر' : '✗ غير متوفر'}
-                                            </span>
+                                            <h4 className="font-semibold text-purple-900 mb-1">نوع التحليل</h4>
+                                            <span className="text-sm text-purple-600">تحليل موقع إلكتروني</span>
                                         </div>
 
                                         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                            <h4 className="font-semibold text-orange-900 mb-1">رقم الهاتف</h4>
-                                            <span className={`text-sm ${analysis.gmb_data.phone ? 'text-green-600' : 'text-red-600'}`}>
-                                                {analysis.gmb_data.phone ? '✓ متوفر' : '✗ غير متوفر'}
-                                            </span>
+                                            <h4 className="font-semibold text-orange-900 mb-1">الحالة</h4>
+                                            <span className="text-sm text-orange-600">مكتمل</span>
                                         </div>
                                     </div>
-                                )}
 
-                                {analysis.recommendations && analysis.recommendations.length > 0 && (
-                                    <div className="mt-6">
-                                        <h4 className="font-semibold text-gray-900 mb-3">التوصيات للتحسين:</h4>
-                                        <ul className="space-y-2">
-                                            {analysis.recommendations.map((recommendation, index) => (
-                                                <li key={index} className="flex items-start">
-                                                    <span className="text-blue-500 ml-2">•</span>
-                                                    <span className="text-gray-700">{recommendation}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
+                                    {analysis.recommendations && analysis.recommendations.length > 0 && (
+                                        <div className="mt-6">
+                                            <h4 className="font-semibold text-gray-900 mb-3">التوصيات للتحسين:</h4>
+                                            <ul className="space-y-2">
+                                                {analysis.recommendations.map((recommendation, index) => (
+                                                    <li key={index} className="flex items-start">
+                                                        <span className="text-blue-500 ml-2">•</span>
+                                                        <span className="text-gray-700">{recommendation}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
