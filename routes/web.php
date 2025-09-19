@@ -40,9 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Website Analyzer Routes - النظام الشامل المحدث
-    Route::get('/analyzer', [WebsiteAnalyzerController::class, 'index'])->name('website.analyzer');
+    Route::get('/analyzer', function() { 
+        return Inertia::render('BusinessAnalyzer'); 
+    })->name('website.analyzer');
     Route::post('/analyzer/analyze', [WebsiteAnalyzerController::class, 'analyze'])->name('website.analyze');
-    Route::post('/analyzer/search-business', [WebsiteAnalyzerController::class, 'searchBusiness'])->name('website.search.business');
+    Route::get('/analyzer/search-business', [WebsiteAnalyzerController::class, 'searchBusiness'])->name('website.search.business');
+    Route::post('/analyzer/analyze-business', [WebsiteAnalyzerController::class, 'analyzeBusiness'])->name('website.analyze.business');
     Route::get('/analyzer/history', [WebsiteAnalyzerController::class, 'history'])->name('website.history');
     Route::get('/analyzer/report/{id}', [WebsiteAnalyzerController::class, 'show'])->name('website.show')->where('id', '[0-9]+');
     Route::get('/analyzer/report/{id}/pdf', [WebsiteAnalyzerController::class, 'downloadPDF'])->name('website.report.pdf')->where('id', '[0-9]+');

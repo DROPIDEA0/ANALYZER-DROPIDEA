@@ -10,6 +10,7 @@ import axios from 'axios';
 export default function WebsiteAnalyzer({ auth, analysis, googleMapsApiKey }) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [analysisMode, setAnalysisMode] = useState('website'); // 'website' or 'business'
 
     // Function to clean markdown symbols
     const cleanText = (text) => {
@@ -27,8 +28,26 @@ export default function WebsiteAnalyzer({ auth, analysis, googleMapsApiKey }) {
         url: '',
         region: 'global',
         analysis_type: 'full',
-        business_name: ''
+        business_name: '',
+        business_category: '',
+        city: 'الرياض'
     });
+
+    // فئات الأعمال التجارية
+    const businessCategories = [
+        { value: 'restaurant', label: 'مطاعم', icon: '🍽️' },
+        { value: 'beauty_salon', label: 'مراكز التجميل', icon: '💄' },
+        { value: 'lawyer', label: 'مكاتب المحاماة', icon: '⚖️' },
+        { value: 'hospital', label: 'مستشفيات وعيادات', icon: '🏥' },
+        { value: 'school', label: 'مدارس ومعاهد', icon: '🎓' },
+        { value: 'gym', label: 'نوادي رياضية', icon: '💪' },
+        { value: 'shopping_mall', label: 'مراكز تسوق', icon: '🛍️' },
+        { value: 'car_repair', label: 'ورش السيارات', icon: '🔧' },
+        { value: 'real_estate_agency', label: 'مكاتب عقارية', icon: '🏠' },
+        { value: 'accounting', label: 'مكاتب محاسبة', icon: '📊' },
+        { value: 'pharmacy', label: 'صيدليات', icon: '💊' },
+        { value: 'gas_station', label: 'محطات وقود', icon: '⛽' }
+    ];
 
     // Circle progress component
     const CircleProgress = ({ percentage, label, color = 'blue' }) => {

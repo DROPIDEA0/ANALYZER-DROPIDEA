@@ -207,7 +207,18 @@ class WebsiteAnalyzerController extends Controller
 
         try {
             $googlePlaces = app(GooglePlacesService::class);
-            $results = $googlePlaces->quickSearch($request->query);
+            
+            // بناء الاستعلام بناءً على الفئة والمدينة
+            $searchQuery = $request->input('query', '');
+            
+            if ($request->filled('category')) {
+                $searchQuery .= ' ' . $this->getCategorySearchTerm($request->input('category'));
+            }
+            if ($request->filled('city')) {
+                $searchQuery .= ' ' . $request->input('city');
+            }
+            
+            $results = $googlePlaces->quickSearch($searchQuery);
             
             return response()->json([
                 'success' => true,
@@ -225,6 +236,219 @@ class WebsiteAnalyzerController extends Controller
                 'message' => 'فشل في البحث: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * تحليل عمل تجاري من Google Places
+     */
+    public function analyzeBusiness(Request $request)
+    {
+        $request->validate([
+            'business_name' => 'required|string|min:3',
+            'business_category' => 'required|string',
+            'city' => 'required|string'
+        ]);
+
+        try {
+            $googlePlaces = app(GooglePlacesService::class);
+            
+            // البحث عن العمل التجاري
+            $searchQuery = $request->business_name . ' ' . $this->getCategorySearchTerm($request->business_category) . ' ' . $request->city;
+            $businessResults = $googlePlaces->quickSearch($searchQuery);
+            
+            if (empty($businessResults)) {
+                return back()->withErrors([
+                    'business_name' => 'لم يتم العثور على أي عمل تجاري بهذا الاسم'
+                ]);
+            }
+            
+            $business = $businessResults[0];
+            
+            // الحصول على تفاصيل إضافية إذا توفر place_id
+            $businessDetails = [];
+            if (!empty($business['place_id'])) {
+                $detailsResponse = $googlePlaces->getPlaceDetails($business['place_id']);
+                if ($detailsResponse['success']) {
+                    $businessDetails = $detailsResponse['place'];
+                }
+            }
+            
+            // إنشاء تحليل للعمل التجاري
+            $analysisData = [
+                'business_type' => 'google_business',
+                'business_name' => $business['name'],
+                'business_category' => $request->business_category,
+                'city' => $request->city,
+                'gmb_data' => [
+                    'name' => $business['name'],
+                    'address' => $business['address'] ?? '',
+                    'rating' => $business['rating'] ?? 0,
+                    'place_id' => $business['place_id'] ?? '',
+                    'types' => $business['types'] ?? [],
+                    'reviews_count' => $businessDetails['userRatingCount'] ?? 0,
+                    'phone' => $businessDetails['nationalPhoneNumber'] ?? '',
+                    'website' => $businessDetails['websiteUri'] ?? '',
+                    'verification_status' => ($businessDetails['businessStatus'] ?? '') === 'OPERATIONAL',
+                    'business_hours' => !empty($businessDetails['regularOpeningHours']) ? 'متوفرة' : 'غير متوفرة',
+                    'photos_count' => count($businessDetails['photos'] ?? [])
+                ],
+                'analysis_date' => now(),
+                'overall_score' => $this->calculateBusinessScore($business, $businessDetails),
+            ];
+            
+            // إنشاء التقرير الموحد
+            $unifiedReport = app(UnifiedReportService::class);
+            $unifiedReportData = $unifiedReport->generateUnifiedReport($analysisData, null);
+            
+            // حفظ التحليل
+            $analysis = WebsiteAnalysis::create([
+                'user_id' => auth()->id(),
+                'url' => $business['place_id'] ?? $business['name'],
+                'region' => 'saudi',
+                'analysis_type' => 'business',
+                'analysis_data' => json_encode($analysisData),
+                'seo_score' => null,
+                'performance_score' => null,
+                'load_time' => null,
+                'ai_score' => $analysisData['overall_score']
+            ]);
+            
+            // إنشاء النتيجة النهائية
+            $result = $this->generateBusinessAnalysisResult($analysisData, $analysis->id);
+            $result['unified_report'] = $unifiedReportData;
+            
+            return Inertia::render('WebsiteAnalyzer', [
+                'analysis' => $result
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Business Analysis Error', [
+                'business_name' => $request->business_name,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors([
+                'business_name' => 'حدث خطأ أثناء تحليل العمل التجاري: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * إنشاء نتيجة تحليل العمل التجاري
+     */
+    private function generateBusinessAnalysisResult($analysisData, $analysisId)
+    {
+        return [
+            'id' => $analysisId,
+            'type' => 'business_analysis',
+            'business_name' => $analysisData['business_name'],
+            'business_category' => $analysisData['business_category'],
+            'city' => $analysisData['city'],
+            'gmb_data' => $analysisData['gmb_data'],
+            'overall_score' => $analysisData['overall_score'],
+            'analysis_date' => $analysisData['analysis_date']->format('Y-m-d H:i:s'),
+            'recommendations' => $this->generateBusinessRecommendations($analysisData)
+        ];
+    }
+    
+    /**
+     * حساب نتيجة العمل التجاري
+     */
+    private function calculateBusinessScore($business, $details)
+    {
+        $score = 0;
+        
+        // التقييم (40%)
+        if (($business['rating'] ?? 0) > 0) {
+            $score += ($business['rating'] / 5) * 40;
+        }
+        
+        // عدد المراجعات (20%)
+        $reviewsCount = $details['userRatingCount'] ?? 0;
+        if ($reviewsCount > 0) {
+            $score += min(($reviewsCount / 100) * 20, 20);
+        }
+        
+        // وجود الموقع الإلكتروني (15%)
+        if (!empty($details['websiteUri'])) {
+            $score += 15;
+        }
+        
+        // وجود رقم الهاتف (10%)
+        if (!empty($details['nationalPhoneNumber'])) {
+            $score += 10;
+        }
+        
+        // ساعات العمل (10%)
+        if (!empty($details['regularOpeningHours'])) {
+            $score += 10;
+        }
+        
+        // الحالة التشغيلية (5%)
+        if (($details['businessStatus'] ?? '') === 'OPERATIONAL') {
+            $score += 5;
+        }
+        
+        return round($score);
+    }
+    
+    /**
+     * توليد توصيات للعمل التجاري
+     */
+    private function generateBusinessRecommendations($analysisData)
+    {
+        $recommendations = [];
+        $gmb = $analysisData['gmb_data'];
+        
+        if (($gmb['rating'] ?? 0) < 4.0) {
+            $recommendations[] = 'تحسين جودة الخدمة للحصول على تقييمات أفضل';
+        }
+        
+        if (($gmb['reviews_count'] ?? 0) < 10) {
+            $recommendations[] = 'تشجيع العملاء على كتابة مراجعات على Google';
+        }
+        
+        if (empty($gmb['website'])) {
+            $recommendations[] = 'إضافة موقع إلكتروني للعمل التجاري';
+        }
+        
+        if (empty($gmb['phone'])) {
+            $recommendations[] = 'إضافة رقم هاتف للتواصل مع العملاء';
+        }
+        
+        if ($gmb['business_hours'] === 'غير متوفرة') {
+            $recommendations[] = 'إضافة ساعات العمل في Google My Business';
+        }
+        
+        if (!$gmb['verification_status']) {
+            $recommendations[] = 'التحقق من العمل التجاري في Google My Business';
+        }
+        
+        return $recommendations;
+    }
+    
+    /**
+     * الحصول على مصطلح البحث للفئة
+     */
+    private function getCategorySearchTerm($category)
+    {
+        $terms = [
+            'restaurant' => 'مطعم',
+            'beauty_salon' => 'صالون تجميل',
+            'lawyer' => 'محامي مكتب قانوني',
+            'hospital' => 'مستشفى عيادة طبية',
+            'school' => 'مدرسة معهد',
+            'gym' => 'نادي رياضي جيم',
+            'shopping_mall' => 'مول مركز تسوق',
+            'car_repair' => 'ورشة سيارات',
+            'real_estate_agency' => 'عقارات مكتب عقاري',
+            'accounting' => 'محاسب مكتب محاسبة',
+            'pharmacy' => 'صيدلية',
+            'gas_station' => 'محطة وقود'
+        ];
+        
+        return $terms[$category] ?? '';
     }
 
     /**
