@@ -197,7 +197,7 @@ class WebsiteAnalyzerController extends Controller
     }
 
     /**
-     * البحث في Google Places للأعمال
+     * البحث في Google Places للأعمال مع دعم التقييد بالدولة
      */
     public function searchBusiness(Request $request)
     {
@@ -208,17 +208,12 @@ class WebsiteAnalyzerController extends Controller
         try {
             $googlePlaces = app(GooglePlacesService::class);
             
-            // بناء الاستعلام بناءً على الفئة والمدينة
-            $searchQuery = $request->input('query', '');
-            
-            if ($request->filled('category')) {
-                $searchQuery .= ' ' . $this->getCategorySearchTerm($request->input('category'));
-            }
-            if ($request->filled('country')) {
-                $searchQuery .= ' ' . $request->input('country');
-            }
-            
-            $results = $googlePlaces->quickSearch($searchQuery);
+            // استخدام الطريقة المحدثة التي تدعم الدولة والفئة
+            $results = $googlePlaces->quickSearch(
+                $request->input('query'),
+                $request->input('country'),
+                $request->input('category')
+            );
             
             return response()->json([
                 'success' => true,
@@ -228,6 +223,8 @@ class WebsiteAnalyzerController extends Controller
         } catch (\Exception $e) {
             Log::error('Business search error', [
                 'query' => $request->input('query'),
+                'country' => $request->input('country'),
+                'category' => $request->input('category'),
                 'error' => $e->getMessage()
             ]);
             
@@ -252,9 +249,12 @@ class WebsiteAnalyzerController extends Controller
         try {
             $googlePlaces = app(GooglePlacesService::class);
             
-            // البحث عن العمل التجاري
-            $searchQuery = $request->business_name . ' ' . $this->getCategorySearchTerm($request->business_category) . ' ' . $request->country;
-            $businessResults = $googlePlaces->quickSearch($searchQuery);
+            // البحث عن العمل التجاري باستخدام الطريقة المحدثة
+            $businessResults = $googlePlaces->quickSearch(
+                $request->business_name,
+                $request->country,
+                $request->business_category
+            );
             
             if (empty($businessResults)) {
                 return back()->withErrors([

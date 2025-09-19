@@ -14,20 +14,34 @@ class GooglePlacesService
     protected $baseUrl = 'https://places.googleapis.com/v1/places';
     
     /**
-     * البحث السريع للاقتراحات (للواجهة الأمامية)
+     * البحث السريع للاقتراحات (للواجهة الأمامية) مع دعم الدولة
      */
-    public function quickSearch($query)
+    public function quickSearch($query, $country = null, $category = null)
     {
         if (strlen($query) < 3) {
             return [];
         }
         
         try {
+            // بناء استعلام البحث
+            $searchQuery = $query;
+            if ($category) {
+                $searchQuery .= ' ' . $this->getCategorySearchTerm($category);
+            }
+            
             $requestBody = [
-                'textQuery' => $query,
-                'maxResultCount' => 5,
+                'textQuery' => $searchQuery,
+                'maxResultCount' => 10,
                 'languageCode' => 'ar'
             ];
+            
+            // إضافة تقييد جغرافي بناءً على الدولة
+            if ($country) {
+                $countryBounds = $this->getCountryLocationBias($country);
+                if ($countryBounds) {
+                    $requestBody['locationBias'] = $countryBounds;
+                }
+            }
             
             $response = $this->client->post($this->baseUrl . ':searchText', [
                 'json' => $requestBody
@@ -48,39 +62,112 @@ class GooglePlacesService
             }, array_slice($places, 0, 5));
             
         } catch (\Exception $e) {
-            Log::error('Google Places quick search failed', ['error' => $e->getMessage(), 'query' => $query]);
+            Log::error('Google Places quick search failed', [
+                'error' => $e->getMessage(), 
+                'query' => $query,
+                'country' => $country,
+                'category' => $category
+            ]);
             
-            // لا نرجع بيانات وهمية لتجنب فساد التقارير
-            // في بيئة التطوير فقط، يمكن إرجاع بيانات تجريبية
-            if (app()->environment('local')) {
-                return [
-                    [
-                        'name' => '[تجريبي] ' . $query . ' - مؤسسة تجارية',
-                        'address' => '[تجريبي] عنوان تجريبي',
-                        'place_id' => 'dev_sample_' . md5($query),
-                        'rating' => 4.0,
-                        'types' => ['establishment']
-                    ]
-                ];
-            }
-            
-            // في بيئة الإنتاج، نرجع قائمة فارغة
+            // في حالة الخطأ، نرجع قائمة فارغة
             return [];
         }
     }
     
+    /**
+     * الحصول على إحداثيات وحدود الدولة للبحث
+     */
+    private function getCountryLocationBias($country)
+    {
+        $countries = [
+            'السعودية' => [
+                'circle' => [
+                    'center' => ['latitude' => 24.7136, 'longitude' => 46.6753], // الرياض
+                    'radius' => 1000000 // 1000 كم
+                ]
+            ],
+            'الامارات' => [
+                'circle' => [
+                    'center' => ['latitude' => 25.2048, 'longitude' => 55.2708], // دبي
+                    'radius' => 300000 // 300 كم
+                ]
+            ],
+            'الكويت' => [
+                'circle' => [
+                    'center' => ['latitude' => 29.3117, 'longitude' => 47.4818], // الكويت
+                    'radius' => 200000 // 200 كم
+                ]
+            ],
+            'قطر' => [
+                'circle' => [
+                    'center' => ['latitude' => 25.3548, 'longitude' => 51.1839], // الدوحة
+                    'radius' => 150000 // 150 كم
+                ]
+            ],
+            'البحرين' => [
+                'circle' => [
+                    'center' => ['latitude' => 26.0667, 'longitude' => 50.5577], // المنامة
+                    'radius' => 100000 // 100 كم
+                ]
+            ],
+            'عمان' => [
+                'circle' => [
+                    'center' => ['latitude' => 23.5859, 'longitude' => 58.4059], // مسقط
+                    'radius' => 500000 // 500 كم
+                ]
+            ],
+            'الأردن' => [
+                'circle' => [
+                    'center' => ['latitude' => 31.9454, 'longitude' => 35.9284], // عمان
+                    'radius' => 300000 // 300 كم
+                ]
+            ],
+            'مصر' => [
+                'circle' => [
+                    'center' => ['latitude' => 30.0444, 'longitude' => 31.2357], // القاهرة
+                    'radius' => 800000 // 800 كم
+                ]
+            ]
+        ];
+        
+        return $countries[$country] ?? null;
+    }
+    
+    /**
+     * الحصول على مصطلح البحث للفئة
+     */
+    private function getCategorySearchTerm($category)
+    {
+        $categoryTerms = [
+            'restaurant' => 'مطعم',
+            'beauty_salon' => 'صالون تجميل',
+            'lawyer' => 'مكتب محاماة',
+            'hospital' => 'مستشفى عيادة',
+            'school' => 'مدرسة معهد',
+            'gym' => 'نادي رياضي جيم',
+            'shopping_mall' => 'مركز تسوق مول',
+            'car_repair' => 'ورشة سيارات',
+            'real_estate_agency' => 'مكتب عقاري',
+            'accounting' => 'مكتب محاسبة',
+            'pharmacy' => 'صيدلية',
+            'gas_station' => 'محطة وقود'
+        ];
+        
+        return $categoryTerms[$category] ?? $category;
+    }
+    
     public function __construct()
     {
+        $this->apiKey = env('GOOGLE_MAPS_API_KEY');
+        
         $this->client = new Client([
             'timeout' => 30,
             'headers' => [
                 'Content-Type' => 'application/json',
-                'X-Goog-Api-Key' => config('services.google.maps_api_key', env('GOOGLE_MAPS_API_KEY')),
+                'X-Goog-Api-Key' => $this->apiKey,
                 'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.businessStatus,places.priceLevel,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.photos,places.reviews,places.primaryTypeDisplayName,places.types'
             ]
         ]);
-        
-        $this->apiKey = config('services.google.maps_api_key', env('GOOGLE_MAPS_API_KEY'));
     }
     
     /**
