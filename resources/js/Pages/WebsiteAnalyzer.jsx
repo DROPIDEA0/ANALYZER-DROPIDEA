@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
+import axios from 'axios';
 
 export default function WebsiteAnalyzer({ auth, analysis }) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -25,8 +26,13 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         url: '',
         region: 'global',
-        analysis_type: 'full'
+        analysis_type: 'full',
+        business_name: ''
     });
+
+    const [businessSearchQuery, setBusinessSearchQuery] = useState('');
+    const [businessResults, setBusinessResults] = useState([]);
+    const [isSearchingBusiness, setIsSearchingBusiness] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -46,6 +52,31 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
         if (analysis) {
             window.open(route('website.report.pdf', { id: analysis.id }), '_blank');
         }
+    };
+
+    const searchBusiness = async (query) => {
+        if (!query.trim()) return;
+        
+        setIsSearchingBusiness(true);
+        try {
+            const response = await axios.post(route('website.search.business'), {
+                query: query
+            });
+            
+            if (response.data.success) {
+                setBusinessResults(response.data.businesses || []);
+            }
+        } catch (error) {
+            console.error('فشل في البحث:', error);
+        } finally {
+            setIsSearchingBusiness(false);
+        }
+    };
+
+    const selectBusiness = (business) => {
+        setData('business_name', business.name);
+        setBusinessSearchQuery(business.name);
+        setBusinessResults([]);
     };
 
     const ScoreCircle = ({ score, label, color = 'blue' }) => {
@@ -128,7 +159,7 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                     {/* Analysis Form */}
                     <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div>
                                     <InputLabel htmlFor="url" value="رابط الموقع" />
                                     <TextInput
@@ -142,6 +173,50 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                         required
                                     />
                                     <InputError message={errors.url} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="business_search" value="البحث عن العمل (اختياري)" />
+                                    <div className="relative">
+                                        <TextInput
+                                            id="business_search"
+                                            type="text"
+                                            value={businessSearchQuery}
+                                            className="mt-1 block w-full"
+                                            placeholder="ابحث عن اسم العمل..."
+                                            onChange={(e) => {
+                                                setBusinessSearchQuery(e.target.value);
+                                                if (e.target.value.length >= 3) {
+                                                    searchBusiness(e.target.value);
+                                                }
+                                            }}
+                                        />
+                                        {isSearchingBusiness && (
+                                            <div className="absolute right-3 top-3">
+                                                <svg className="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            </div>
+                                        )}
+                                        {businessResults.length > 0 && (
+                                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                                {businessResults.map((business, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        className="w-full text-right p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                                        onClick={() => selectBusiness(business)}
+                                                    >
+                                                        <div className="font-medium">{business.name}</div>
+                                                        {business.address && (
+                                                            <div className="text-sm text-gray-500">{business.address}</div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div>
@@ -171,7 +246,7 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                         onChange={(e) => setData('analysis_type', e.target.value)}
                                         className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     >
-                                        <option value="full">تحليل شامل</option>
+                                        <option value="full">تحليل شامل متقدم</option>
                                         <option value="seo">السيو فقط</option>
                                         <option value="performance">الأداء فقط</option>
                                         <option value="competitors">المنافسين فقط</option>
@@ -181,7 +256,7 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
 
                             <div className="flex justify-center">
                                 <PrimaryButton 
-                                    className="px-8 py-3 text-lg" 
+                                    className="px-8 py-3 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
                                     disabled={processing || isAnalyzing}
                                 >
                                     {isAnalyzing ? (
@@ -190,10 +265,10 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            جاري التحليل...
+                                            🚀 جاري التحليل الشامل...
                                         </>
                                     ) : (
-                                        'بدء التحليل'
+                                        '🚀 بدء التحليل الشامل'
                                     )}
                                 </PrimaryButton>
                             </div>
@@ -218,15 +293,17 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                                    <ScoreCircle score={analysis.overall_score || 0} label="النتيجة الإجمالية" color="indigo" />
                                     <ScoreCircle score={analysis.seo_score || 0} label="السيو" color="blue" />
                                     <ScoreCircle score={analysis.performance_score || 0} label="الأداء" color="green" />
-                                    <ScoreCircle score={analysis.ai_score || 0} label="تقييم الذكاء الاصطناعي" color="purple" />
+                                    <ScoreCircle score={analysis.security_score || 0} label="الأمان" color="red" />
+                                    <ScoreCircle score={analysis.ux_score || 0} label="تجربة المستخدم" color="yellow" />
                                     <div className="flex flex-col items-center">
-                                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <span className="text-2xl font-bold text-gray-700">{analysis.load_time || 0}s</span>
+                                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                                            <span className="text-lg font-bold text-gray-700">{analysis.load_time || 0}s</span>
                                         </div>
-                                        <span className="text-sm text-gray-600 mt-2 text-center">سرعة التحميل</span>
+                                        <span className="text-xs text-gray-600 mt-2 text-center">سرعة التحميل</span>
                                     </div>
                                 </div>
 

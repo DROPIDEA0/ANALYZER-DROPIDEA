@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 use App\Services\WebsiteAnalyzerService;
 use App\Services\SeoAnalyzerService;
 use App\Services\PerformanceAnalyzerService;
 use App\Services\CompetitorAnalyzerService;
 use App\Services\ReportGeneratorService;
 use App\Services\AIAnalysisService;
+use App\Services\AdvancedWebsiteAnalyzerService;
+use App\Services\GooglePlacesService;
+use App\Services\PageSpeedService;
+use App\Services\WappalyzerService;
+use App\Services\SecurityAnalysisService;
 use App\Models\WebsiteAnalysis;
+use App\Models\WebsiteAnalysisAdvanced;
 use App\Models\User;
 
 class WebsiteAnalyzerController extends Controller
@@ -21,6 +28,11 @@ class WebsiteAnalyzerController extends Controller
     protected $competitorAnalyzer;
     protected $reportGenerator;
     protected $aiAnalyzer;
+    protected $advancedAnalyzer;
+    protected $googlePlaces;
+    protected $pageSpeed;
+    protected $wappalyzer;
+    protected $securityAnalysis;
 
     public function __construct(
         WebsiteAnalyzerService $websiteAnalyzer,
@@ -28,7 +40,12 @@ class WebsiteAnalyzerController extends Controller
         PerformanceAnalyzerService $performanceAnalyzer,
         CompetitorAnalyzerService $competitorAnalyzer,
         ReportGeneratorService $reportGenerator,
-        AIAnalysisService $aiAnalyzer
+        AIAnalysisService $aiAnalyzer,
+        AdvancedWebsiteAnalyzerService $advancedAnalyzer,
+        GooglePlacesService $googlePlaces,
+        PageSpeedService $pageSpeed,
+        WappalyzerService $wappalyzer,
+        SecurityAnalysisService $securityAnalysis
     ) {
         $this->websiteAnalyzer = $websiteAnalyzer;
         $this->seoAnalyzer = $seoAnalyzer;
@@ -36,6 +53,11 @@ class WebsiteAnalyzerController extends Controller
         $this->competitorAnalyzer = $competitorAnalyzer;
         $this->reportGenerator = $reportGenerator;
         $this->aiAnalyzer = $aiAnalyzer;
+        $this->advancedAnalyzer = $advancedAnalyzer;
+        $this->googlePlaces = $googlePlaces;
+        $this->pageSpeed = $pageSpeed;
+        $this->wappalyzer = $wappalyzer;
+        $this->securityAnalysis = $securityAnalysis;
     }
 
     /**
@@ -47,112 +69,151 @@ class WebsiteAnalyzerController extends Controller
     }
 
     /**
-     * تحليل موقع ويب مع الذكاء الاصطناعي
+     * تحليل موقع ويب متقدم وشامل
      */
     public function analyze(Request $request)
     {
         $request->validate([
             'url' => 'required|url',
             'region' => 'required|string',
-            'analysis_type' => 'required|in:full,seo,performance,competitors'
+            'analysis_type' => 'required|in:full,seo,performance,competitors',
+            'business_name' => 'nullable|string'
         ]);
 
         try {
-            // تحليل أساسي للموقع
-            $basicAnalysis = $this->websiteAnalyzer->analyzeWebsite($request->url);
-            
-            // تحليل التقنيات المستخدمة بالتفصيل (مدمج في التحليل الأساسي)
-            $technologies = $basicAnalysis['technologies'] ?? [];
-            
-            $analysisData = [
-                'url' => $request->url,
-                'region' => $request->region,
-                'analysis_type' => $request->analysis_type,
-                'basic_info' => $basicAnalysis,
-                'technologies' => $technologies,
-                'analyzed_at' => now(),
-            ];
-
-            // تحليل السيو إذا كان مطلوباً
-            if (in_array($request->analysis_type, ['full', 'seo'])) {
-                $seoAnalysis = $this->seoAnalyzer->analyzeSeo($request->url);
-                $analysisData['seo_analysis'] = $seoAnalysis;
-                $analysisData['seo_score'] = $seoAnalysis['score'];
-            }
-
-            // تحليل الأداء إذا كان مطلوباً
-            if (in_array($request->analysis_type, ['full', 'performance'])) {
-                $performanceAnalysis = $this->performanceAnalyzer->analyzePerformance($request->url);
-                $analysisData['performance_analysis'] = $performanceAnalysis;
-                $analysisData['performance_score'] = $performanceAnalysis['score'];
-                $analysisData['load_time'] = $performanceAnalysis['load_time'];
-            }
-
-            // تحليل المنافسين إذا كان مطلوباً
-            if (in_array($request->analysis_type, ['full', 'competitors'])) {
-                $competitorAnalysis = $this->competitorAnalyzer->analyzeCompetitors($request->url, $request->region);
-                $analysisData['competitor_analysis'] = $competitorAnalysis;
-                $analysisData['competitors_count'] = count($competitorAnalysis['competitors']);
-            }
-
-            // تحليل الذكاء الاصطناعي الشامل
-            $aiAnalysis = $this->aiAnalyzer->analyzeWebsiteWithAI(
-                $request->url, 
-                $basicAnalysis, 
-                $request->analysis_type
+            // استخدام النظام المتقدم للتحليل الشامل
+            $analysisResult = $this->advancedAnalyzer->analyzeWebsite(
+                $request->url,
+                $request->business_name
             );
-            
-            // إصلاح بنية بيانات AI لتكون متوافقة مع الواجهة الأمامية
-            if (isset($aiAnalysis['analysis']) && !isset($aiAnalysis['summary'])) {
-                $aiAnalysis['summary'] = $aiAnalysis['analysis'];
-            }
-            
-            // تأكد من وجود overall_score
-            if (!isset($aiAnalysis['overall_score']) && isset($aiAnalysis['score'])) {
-                $aiAnalysis['overall_score'] = $aiAnalysis['score'];
-            }
-            
-            // إضافة بيانات افتراضية إذا كانت مفقودة
-            if (!isset($aiAnalysis['strengths'])) {
-                $aiAnalysis['strengths'] = [];
-            }
-            if (!isset($aiAnalysis['weaknesses'])) {
-                $aiAnalysis['weaknesses'] = [];
-            }
-            if (!isset($aiAnalysis['seo_recommendations'])) {
-                $aiAnalysis['seo_recommendations'] = [];
-            }
-            if (!isset($aiAnalysis['performance_recommendations'])) {
-                $aiAnalysis['performance_recommendations'] = [];
-            }
-            
-            $analysisData['ai_analysis'] = $aiAnalysis;
 
-            // حفظ التحليل في قاعدة البيانات
-            $analysis = WebsiteAnalysis::create([
+            // حفظ التحليل المتقدم في الجدول الجديد
+            $analysis = WebsiteAnalysisAdvanced::create([
                 'user_id' => auth()->id(),
                 'url' => $request->url,
-                'region' => $request->region,
-                'analysis_type' => $request->analysis_type,
-                'analysis_data' => json_encode($analysisData),
-                'seo_score' => $analysisData['seo_score'] ?? null,
-                'performance_score' => $analysisData['performance_score'] ?? null,
-                'load_time' => $analysisData['load_time'] ?? null,
-                'ai_score' => $aiAnalysis['overall_score'] ?? $aiAnalysis['score'] ?? null,
+                'business_name' => $request->business_name,
+                'overall_score' => $analysisResult['overall_score'],
+                'performance_score' => $analysisResult['performance_score'],
+                'seo_score' => $analysisResult['seo_score'],
+                'security_score' => $analysisResult['security_score'],
+                'ux_score' => $analysisResult['ux_score'],
+                'ai_score' => $analysisResult['ai_score'],
+                'technology_score' => $analysisResult['technology_score'],
+                'performance_data' => json_encode($analysisResult['performance_analysis'] ?? []),
+                'seo_data' => json_encode($analysisResult['seo_analysis'] ?? []),
+                'security_data' => json_encode($analysisResult['security_analysis'] ?? []),
+                'technology_data' => json_encode($analysisResult['technology_analysis'] ?? []),
+                'ai_insights' => $analysisResult['ai_analysis'] ?? '',
+                'recommendations' => json_encode($analysisResult['recommendations'] ?? []),
+                'gmb_data' => json_encode($analysisResult['gmb_data'] ?? []),
+                'load_time' => $analysisResult['load_time'] ?? null,
+                'page_size' => $analysisResult['page_size'] ?? null,
+                'analysis_metadata' => json_encode([
+                    'region' => $request->region,
+                    'analysis_type' => $request->analysis_type,
+                    'analyzed_at' => now(),
+                    'user_agent' => $request->userAgent(),
+                    'ip_address' => $request->ip()
+                ])
             ]);
 
-            // إنشاء ملخص النتائج للعرض
-            $result = $this->generateEnhancedAnalysisResult($analysisData, $analysis->id);
+            // تحضير النتيجة للعرض في الواجهة
+            $displayResult = $this->prepareAdvancedResultForDisplay($analysisResult, $analysis->id);
 
             return Inertia::render('WebsiteAnalyzer', [
-                'analysis' => $result
+                'analysis' => $displayResult
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Advanced Analysis Error', [
+                'url' => $request->url,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return back()->withErrors([
                 'url' => 'حدث خطأ أثناء تحليل الموقع: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * البحث في Google Places للأعمال
+     */
+    public function searchBusiness(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string'
+        ]);
+
+        try {
+            $results = $this->googlePlaces->searchBusiness($request->query);
+            
+            return response()->json([
+                'success' => true,
+                'businesses' => $results
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'فشل في البحث: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * تحضير النتيجة المتقدمة للعرض
+     */
+    private function prepareAdvancedResultForDisplay($analysisResult, $analysisId)
+    {
+        return [
+            'id' => $analysisId,
+            'url' => $analysisResult['url'] ?? '',
+            'overall_score' => $analysisResult['overall_score'] ?? 0,
+            'seo_score' => $analysisResult['seo_score'] ?? 0,
+            'performance_score' => $analysisResult['performance_score'] ?? 0,
+            'security_score' => $analysisResult['security_score'] ?? 0,
+            'ux_score' => $analysisResult['ux_score'] ?? 0,
+            'ai_score' => $analysisResult['ai_score'] ?? 0,
+            'technology_score' => $analysisResult['technology_score'] ?? 0,
+            'load_time' => $analysisResult['load_time'] ?? 0,
+            'page_size' => $analysisResult['page_size'] ?? 0,
+            
+            // تحليلات مفصلة
+            'performance_analysis' => $analysisResult['performance_analysis'] ?? [],
+            'seo_analysis' => $analysisResult['seo_analysis'] ?? [],
+            'security_analysis' => $analysisResult['security_analysis'] ?? [],
+            'technology_analysis' => $analysisResult['technology_analysis'] ?? [],
+            
+            // نقاط القوة والضعف
+            'strengths' => $analysisResult['strengths'] ?? [],
+            'weaknesses' => $analysisResult['weaknesses'] ?? [],
+            
+            // التوصيات
+            'recommendations' => $analysisResult['recommendations'] ?? [],
+            'detailed_sections' => [
+                'seo_recommendations' => $analysisResult['seo_recommendations'] ?? [],
+                'performance_recommendations' => $analysisResult['performance_recommendations'] ?? [],
+                'security_recommendations' => $analysisResult['security_recommendations'] ?? [],
+                'ux_recommendations' => $analysisResult['ux_recommendations'] ?? [],
+            ],
+            
+            // رؤى الذكاء الاصطناعي
+            'ai_analysis' => [
+                'summary' => $analysisResult['ai_analysis'] ?? 'تم إجراء تحليل شامل للموقع',
+                'analysis' => $analysisResult['ai_analysis'] ?? '',
+                'overall_score' => $analysisResult['ai_score'] ?? 0
+            ],
+            'ai_summary' => $analysisResult['ai_analysis'] ?? '',
+            
+            // معلومات Google My Business
+            'gmb_data' => $analysisResult['gmb_data'] ?? [],
+            
+            // ملخص التقنيات
+            'technologies_summary' => $analysisResult['technology_analysis'] ?? [],
+            'technologies' => $analysisResult['technology_analysis'] ?? []
+        ];
     }
 
     /**
