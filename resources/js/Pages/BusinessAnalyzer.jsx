@@ -20,7 +20,7 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
         analysis_type: 'full',
         business_name: '',
         business_category: '',
-        city: 'الرياض'
+        country: 'السعودية'
     });
 
     // فئات الأعمال التجارية
@@ -53,7 +53,7 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                 params: {
                     query: query,
                     category: category,
-                    city: data.city || 'الرياض'
+                    country: data.country || 'السعودية'
                 }
             });
 
@@ -203,9 +203,10 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                                                 className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                 onChange={(e) => setData('analysis_type', e.target.value)}
                                             >
-                                                <option value="basic">تحليل أساسي</option>
-                                                <option value="advanced">تحليل متقدم</option>
                                                 <option value="full">تحليل شامل (موصى به)</option>
+                                                <option value="seo">تحليل تحسين محركات البحث</option>
+                                                <option value="performance">تحليل الأداء</option>
+                                                <option value="competitors">تحليل المنافسين</option>
                                             </select>
                                         </div>
                                     </div>
@@ -263,22 +264,22 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                                         </div>
 
                                         <div>
-                                            <InputLabel htmlFor="city" value="المدينة" />
+                                            <InputLabel htmlFor="country" value="الدولة" />
                                             <select
-                                                id="city"
-                                                name="city"
-                                                value={data.city}
+                                                id="country"
+                                                name="country"
+                                                value={data.country}
                                                 className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500"
-                                                onChange={(e) => setData('city', e.target.value)}
+                                                onChange={(e) => setData('country', e.target.value)}
                                             >
-                                                <option value="الرياض">الرياض</option>
-                                                <option value="جدة">جدة</option>
-                                                <option value="الدمام">الدمام</option>
-                                                <option value="مكة">مكة المكرمة</option>
-                                                <option value="المدينة">المدينة المنورة</option>
-                                                <option value="تبوك">تبوك</option>
-                                                <option value="أبها">أبها</option>
-                                                <option value="الطائف">الطائف</option>
+                                                <option value="السعودية">🇸🇦 المملكة العربية السعودية</option>
+                                                <option value="الامارات">🇦🇪 دولة الإمارات العربية المتحدة</option>
+                                                <option value="الكويت">🇰🇼 دولة الكويت</option>
+                                                <option value="قطر">🇶🇦 دولة قطر</option>
+                                                <option value="البحرين">🇧🇭 مملكة البحرين</option>
+                                                <option value="عمان">🇴🇲 سلطنة عمان</option>
+                                                <option value="الأردن">🇯🇴 المملكة الأردنية الهاشمية</option>
+                                                <option value="مصر">🇪🇬 جمهورية مصر العربية</option>
                                             </select>
                                         </div>
                                     </div>
@@ -369,7 +370,7 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                                         <p className="text-green-700">
                                             فئة: {businessCategories.find(cat => cat.value === analysis.business_category)?.label || analysis.business_category}
                                         </p>
-                                        <p className="text-green-700">المدينة: {analysis.city}</p>
+                                        <p className="text-green-700">الدولة: {analysis.country}</p>
                                         <div className="mt-3">
                                             <span className="text-2xl font-bold text-green-800">{analysis.overall_score}%</span>
                                             <span className="text-green-600 mr-2">النتيجة الإجمالية</span>

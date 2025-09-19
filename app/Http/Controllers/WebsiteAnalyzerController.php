@@ -214,8 +214,8 @@ class WebsiteAnalyzerController extends Controller
             if ($request->filled('category')) {
                 $searchQuery .= ' ' . $this->getCategorySearchTerm($request->input('category'));
             }
-            if ($request->filled('city')) {
-                $searchQuery .= ' ' . $request->input('city');
+            if ($request->filled('country')) {
+                $searchQuery .= ' ' . $request->input('country');
             }
             
             $results = $googlePlaces->quickSearch($searchQuery);
@@ -246,14 +246,14 @@ class WebsiteAnalyzerController extends Controller
         $request->validate([
             'business_name' => 'required|string|min:3',
             'business_category' => 'required|string',
-            'city' => 'required|string'
+            'country' => 'required|string'
         ]);
 
         try {
             $googlePlaces = app(GooglePlacesService::class);
             
             // البحث عن العمل التجاري
-            $searchQuery = $request->business_name . ' ' . $this->getCategorySearchTerm($request->business_category) . ' ' . $request->city;
+            $searchQuery = $request->business_name . ' ' . $this->getCategorySearchTerm($request->business_category) . ' ' . $request->country;
             $businessResults = $googlePlaces->quickSearch($searchQuery);
             
             if (empty($businessResults)) {
@@ -278,7 +278,7 @@ class WebsiteAnalyzerController extends Controller
                 'business_type' => 'google_business',
                 'business_name' => $business['name'],
                 'business_category' => $request->business_category,
-                'city' => $request->city,
+                'country' => $request->country,
                 'gmb_data' => [
                     'name' => $business['name'],
                     'address' => $business['address'] ?? '',
