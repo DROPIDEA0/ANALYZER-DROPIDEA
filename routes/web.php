@@ -18,6 +18,9 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return Redirect::route('website.analyzer');
+    }
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
