@@ -23,5 +23,10 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production' || env('FORCE_HTTPS', false)) {
             URL::forceScheme('https');
         }
+        
+        // مشاركة مفتاح Google Maps مع جميع صفحات Inertia
+        \Inertia\Inertia::share([
+            'googleMapsApiKey' => config('services.google.maps_api_key')
+        ]);
     }
 }

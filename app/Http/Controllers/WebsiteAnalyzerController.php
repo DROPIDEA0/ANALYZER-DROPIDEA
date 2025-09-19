@@ -19,6 +19,8 @@ use App\Services\SecurityAnalysisService;
 use App\Models\WebsiteAnalysis;
 use App\Models\WebsiteAnalysisAdvanced;
 use App\Models\User;
+use App\Services\GooglePlacesService;
+use App\Services\UnifiedReportService;
 
 class WebsiteAnalyzerController extends Controller
 {
@@ -137,6 +139,21 @@ class WebsiteAnalyzerController extends Controller
             
             $analysisData['ai_analysis'] = $aiAnalysis;
 
+            // تحسين البيانات مع Google Places إذا تم تحديد اسم العمل
+            if (!empty($request->business_name)) {
+                $googlePlaces = app(GooglePlacesService::class);
+                $gmbResults = $googlePlaces->quickSearch($request->business_name);
+                
+                if (!empty($gmbResults)) {
+                    $analysisData['gmb_data'] = [
+                        'name' => $gmbResults[0]['name'] ?? '',
+                        'address' => $gmbResults[0]['address'] ?? '',
+                        'rating' => $gmbResults[0]['rating'] ?? 0,
+                        'place_id' => $gmbResults[0]['place_id'] ?? ''
+                    ];
+                }
+            }
+            
             // إضافة النتائج المتقدمة (تحليل أمان، UX، إلخ)
             $analysisData['security_score'] = 75; // نتيجة افتراضية للأمان
             $analysisData['ux_score'] = 70; // نتيجة افتراضية لتجربة المستخدم
@@ -155,8 +172,13 @@ class WebsiteAnalyzerController extends Controller
                 'ai_score' => $aiAnalysis['overall_score'] ?? $aiAnalysis['score'] ?? null,
             ]);
 
-            // إنشاء ملخص النتائج للعرض
+            // إنشاء التقرير الموحد للمرحلة الثانية
+            $unifiedReport = app(UnifiedReportService::class);
+            $report = $unifiedReport->generateUnifiedReport($analysisData, $analysis->id);
+            
+            // إنشاء ملخص النتائج للعرض مع التقرير الموحد
             $result = $this->generateEnhancedAnalysisResult($analysisData, $analysis->id);
+            $result['unified_report'] = $report;
 
             return Inertia::render('WebsiteAnalyzer', [
                 'analysis' => $result
@@ -181,21 +203,12 @@ class WebsiteAnalyzerController extends Controller
     public function searchBusiness(Request $request)
     {
         $request->validate([
-            'query' => 'required|string'
+            'query' => 'required|string|min:3'
         ]);
 
         try {
-            // إرجاع نتائج وهمية للآن
-            $results = [
-                [
-                    'name' => $request->query . ' - شركة',
-                    'address' => 'العنوان الأول'
-                ],
-                [
-                    'name' => $request->query . ' - مؤسسة',
-                    'address' => 'العنوان الثاني'
-                ]
-            ];
+            $googlePlaces = app(GooglePlacesService::class);
+            $results = $googlePlaces->quickSearch($request->query);
             
             return response()->json([
                 'success' => true,
@@ -203,10 +216,15 @@ class WebsiteAnalyzerController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            Log::error('Business search error', [
+                'query' => $request->query,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'فشل في البحث: ' . $e->getMessage()
-            ], 400);
+            ], 500);
         }
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -7,7 +7,7 @@ import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import axios from 'axios';
 
-export default function WebsiteAnalyzer({ auth, analysis }) {
+export default function WebsiteAnalyzer({ auth, analysis, googleMapsApiKey }) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -202,9 +202,58 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
         { id: 'recommendations', name: 'التوصيات', icon: '💡' }
     ];
 
+    // Initialize Google Places Autocomplete
+    useEffect(() => {
+        const initializeGooglePlaces = () => {
+            if (window.google && window.google.maps && window.google.maps.places) {
+                const input = document.getElementById('business_search');
+                if (input) {
+                    const autocomplete = new window.google.maps.places.Autocomplete(input, {
+                        types: ['establishment'],
+                        fields: ['place_id', 'name', 'formatted_address', 'geometry', 'rating'],
+                        componentRestrictions: { country: ['sa', 'ae', 'kw', 'qa', 'bh', 'om'] }
+                    });
+                    
+                    autocomplete.addListener('place_changed', () => {
+                        const place = autocomplete.getPlace();
+                        if (place && place.name) {
+                            setData('business_name', place.name);
+                            setBusinessSearchQuery(place.name);
+                            setBusinessResults([]);
+                        }
+                    });
+                }
+            }
+        };
+        
+        // Check if Google Maps is already loaded
+        if (window.google) {
+            initializeGooglePlaces();
+        } else {
+            // Wait for Google Maps to load
+            const checkGoogleMaps = setInterval(() => {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    clearInterval(checkGoogleMaps);
+                    initializeGooglePlaces();
+                }
+            }, 100);
+            
+            // Cleanup interval after 10 seconds
+            setTimeout(() => clearInterval(checkGoogleMaps), 10000);
+        }
+    }, []);
+
     return (
         <AuthenticatedLayout user={auth.user}>
-            <Head title="محلل مواقع الويب الاحترافي" />
+            <Head title="محلل مواقع الويب الاحترافي">
+                {googleMapsApiKey && (
+                    <script 
+                        src={`https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places&language=ar`}
+                        async 
+                        defer
+                    />
+                )}
+            </Head>
 
             <div className="min-h-screen bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -234,42 +283,59 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="business_search" value="البحث عن العمل (اختياري)" />
+                                    <InputLabel htmlFor="business_search" value="البحث في Google Places (اختياري)" />
                                     <div className="relative">
                                         <TextInput
                                             id="business_search"
                                             type="text"
                                             value={businessSearchQuery}
-                                            className="mt-1 block w-full"
-                                            placeholder="ابحث عن اسم العمل..."
+                                            className="mt-1 block w-full pr-10"
+                                            placeholder="اكتب اسم العمل للبحث في Google Places..."
                                             onChange={(e) => {
                                                 setBusinessSearchQuery(e.target.value);
                                                 if (e.target.value.length >= 3) {
                                                     searchBusiness(e.target.value);
+                                                } else {
+                                                    setBusinessResults([]);
                                                 }
                                             }}
                                         />
-                                        {isSearchingBusiness && (
-                                            <div className="absolute right-3 top-3">
-                                                <svg className="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                            {isSearchingBusiness ? (
+                                                <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            )}
+                                        </div>
                                         {businessResults.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                            <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                                 {businessResults.map((business, index) => (
                                                     <button
-                                                        key={index}
+                                                        key={business.place_id || index}
                                                         type="button"
-                                                        className="w-full text-right p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                                        className="w-full text-right p-4 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
                                                         onClick={() => selectBusiness(business)}
                                                     >
-                                                        <div className="font-medium">{business.name}</div>
-                                                        {business.address && (
-                                                            <div className="text-sm text-gray-500">{business.address}</div>
-                                                        )}
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-900 mb-1">{business.name}</div>
+                                                                <div className="text-sm text-gray-500 mb-2">{business.address}</div>
+                                                                {business.rating > 0 && (
+                                                                    <div className="flex items-center text-sm">
+                                                                        <span className="text-yellow-400">⭐</span>
+                                                                        <span className="mr-1 font-medium">{business.rating}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                                Google Places
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -336,6 +402,109 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                     {/* Analysis Results */}
                     {analysis && (
                         <div className="space-y-8">
+                            {/* Executive Summary - Phase 2 */}
+                            {analysis.unified_report?.executive_summary && (
+                                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm border border-indigo-100 p-6 mb-6">
+                                    <div className="flex items-center mb-4">
+                                        <span className="text-3xl mr-3">📈</span>
+                                        <h2 className="text-2xl font-bold text-indigo-900">الملخص التنفيذي</h2>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-4 mb-4">
+                                        <p className="text-gray-800 text-lg leading-relaxed mb-2">
+                                            {analysis.unified_report.executive_summary.summary_text}
+                                        </p>
+                                        <div className="flex items-center justify-between mt-4">
+                                            <div className="flex items-center">
+                                                <span className="text-sm text-gray-600 ml-2">تاريخ التحليل:</span>
+                                                <span className="font-medium">{analysis.unified_report.executive_summary.analysis_date}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <span className="text-3xl font-bold text-indigo-600 ml-2">{analysis.unified_report.executive_summary.main_score}%</span>
+                                                <span className="text-sm text-gray-600">النتيجة الإجمالية</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {analysis.unified_report.executive_summary.key_findings?.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {analysis.unified_report.executive_summary.key_findings.map((finding, index) => (
+                                                <div key={index} className="bg-white rounded-lg p-3 border border-indigo-100">
+                                                    <div className="flex items-center">
+                                                        <span className="text-indigo-500 ml-2">✓</span>
+                                                        <span className="text-gray-700 text-sm">{finding}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Google Maps Entity Card - Phase 2 */}
+                            {analysis.unified_report?.google_maps_entity_card && (
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-100 p-6 mb-6">
+                                    <div className="flex items-center mb-4">
+                                        <span className="text-3xl ml-3">🗺️</span>
+                                        <h2 className="text-2xl font-bold text-green-900">Google My Business</h2>
+                                    </div>
+                                    
+                                    {analysis.unified_report.google_maps_entity_card.has_gmb_presence ? (
+                                        <div className="bg-white rounded-lg p-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-900 mb-2">معلومات العمل</h3>
+                                                    <p className="text-gray-700 mb-2">
+                                                        <span className="font-medium">الاسم:</span> {analysis.unified_report.google_maps_entity_card.business_name}
+                                                    </p>
+                                                    <p className="text-gray-700 mb-2">
+                                                        <span className="font-medium">العنوان:</span> {analysis.unified_report.google_maps_entity_card.address}
+                                                    </p>
+                                                    {analysis.unified_report.google_maps_entity_card.rating > 0 && (
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="font-medium ml-2">التقييم:</span>
+                                                            <div className="flex items-center">
+                                                                <span className="text-yellow-400 ml-1">⭐</span>
+                                                                <span className="font-bold">{analysis.unified_report.google_maps_entity_card.rating}</span>
+                                                                <span className="text-gray-500 mr-1">({analysis.unified_report.google_maps_entity_card.reviews_count} مراجعة)</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-900 mb-2">حالة التحسين</h3>
+                                                    <div className="flex items-center mb-3">
+                                                        <CircleProgress
+                                                            percentage={analysis.unified_report.google_maps_entity_card.gmb_optimization_score || 0}
+                                                            label="تحسين GMB"
+                                                            color="green"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center text-sm">
+                                                        {analysis.unified_report.google_maps_entity_card.verification_status ? (
+                                                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">✓ معتمد</span>
+                                                        ) : (
+                                                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">⚠️ غير معتمد</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                            <div className="flex items-center">
+                                                <span className="text-yellow-500 text-xl ml-3">⚠️</span>
+                                                <div>
+                                                    <h3 className="font-semibold text-yellow-800">لا يوجد Google My Business</h3>
+                                                    <p className="text-yellow-700 text-sm mt-1">
+                                                        ينصح بإنشاء ملف تجاري على Google My Business لتحسين الظهور المحلي
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Scores Overview */}
                             <div className="bg-white rounded-xl shadow-sm border p-6">
                                 <div className="flex justify-between items-center mb-6">
@@ -344,7 +513,7 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
                                         onClick={downloadPDF}
                                         className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
                                     >
-                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                         تحميل التقرير PDF

@@ -13,18 +13,74 @@ class GooglePlacesService
     protected $apiKey;
     protected $baseUrl = 'https://places.googleapis.com/v1/places';
     
+    /**
+     * البحث السريع للاقتراحات (للواجهة الأمامية)
+     */
+    public function quickSearch($query)
+    {
+        if (strlen($query) < 3) {
+            return [];
+        }
+        
+        try {
+            $requestBody = [
+                'textQuery' => $query,
+                'maxResultCount' => 5,
+                'languageCode' => 'ar'
+            ];
+            
+            $response = $this->client->post($this->baseUrl . ':searchText', [
+                'json' => $requestBody
+            ]);
+            
+            $data = json_decode($response->getBody(), true);
+            $places = $data['places'] ?? [];
+            
+            // تنسيق النتائج للواجهة الأمامية
+            return array_map(function($place) {
+                return [
+                    'name' => $place['displayName']['text'] ?? '',
+                    'address' => $place['formattedAddress'] ?? '',
+                    'place_id' => $place['id'] ?? '',
+                    'rating' => $place['rating'] ?? 0,
+                    'types' => $place['types'] ?? []
+                ];
+            }, array_slice($places, 0, 5));
+            
+        } catch (\Exception $e) {
+            Log::error('Google Places quick search failed', ['error' => $e->getMessage(), 'query' => $query]);
+            
+            // لا نرجع بيانات وهمية لتجنب فساد التقارير
+            // في بيئة التطوير فقط، يمكن إرجاع بيانات تجريبية
+            if (app()->environment('local')) {
+                return [
+                    [
+                        'name' => '[تجريبي] ' . $query . ' - مؤسسة تجارية',
+                        'address' => '[تجريبي] عنوان تجريبي',
+                        'place_id' => 'dev_sample_' . md5($query),
+                        'rating' => 4.0,
+                        'types' => ['establishment']
+                    ]
+                ];
+            }
+            
+            // في بيئة الإنتاج، نرجع قائمة فارغة
+            return [];
+        }
+    }
+    
     public function __construct()
     {
         $this->client = new Client([
             'timeout' => 30,
             'headers' => [
                 'Content-Type' => 'application/json',
-                'X-Goog-Api-Key' => config('services.google.places_api_key', env('GOOGLE_PLACES_API_KEY')),
+                'X-Goog-Api-Key' => config('services.google.maps_api_key', env('GOOGLE_MAPS_API_KEY')),
                 'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.businessStatus,places.priceLevel,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.photos,places.reviews,places.primaryTypeDisplayName,places.types'
             ]
         ]);
         
-        $this->apiKey = config('services.google.places_api_key', env('GOOGLE_PLACES_API_KEY'));
+        $this->apiKey = config('services.google.maps_api_key', env('GOOGLE_MAPS_API_KEY'));
     }
     
     /**
