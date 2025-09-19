@@ -359,6 +359,29 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                     {/* عرض النتائج */}
                     {analysis && (
                         <div className="space-y-8">
+                            {/* أزرار العودة وتحميل PDF */}
+                            <div className="flex justify-between items-center bg-white rounded-xl shadow-lg border p-4">
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                                >
+                                    <span className="ml-2">🔙</span>
+                                    العودة للقائمة الرئيسية
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        if (analysis?.id) {
+                                            window.open(route('website.report.pdf', { id: analysis.id }), '_blank');
+                                        }
+                                    }}
+                                    className="flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+                                >
+                                    <span className="ml-2">📄</span>
+                                    تحميل التقرير PDF
+                                </button>
+                            </div>
+
                             {/* رأس التقرير */}
                             <div className="bg-white rounded-xl shadow-lg border p-8 text-center">
                                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">

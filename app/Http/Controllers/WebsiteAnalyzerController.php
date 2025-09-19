@@ -20,6 +20,7 @@ use App\Models\WebsiteAnalysis;
 use App\Models\WebsiteAnalysisAdvanced;
 use App\Models\User;
 use App\Services\UnifiedReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WebsiteAnalyzerController extends Controller
 {
@@ -153,9 +154,14 @@ class WebsiteAnalyzerController extends Controller
                 }
             }
             
-            // إضافة النتائج المتقدمة (تحليل أمان، UX، إلخ)
-            $analysisData['security_score'] = 75; // نتيجة افتراضية للأمان
-            $analysisData['ux_score'] = 70; // نتيجة افتراضية لتجربة المستخدم
+            // تحليل أمان الموقع باستخدام SecurityAnalysisService
+            $securityService = app(\App\Services\SecurityAnalysisService::class);
+            $securityAnalysis = $securityService->analyzeWebsiteSecurity($request->url);
+            $analysisData['security_score'] = $this->calculateSecurityScore($securityAnalysis);
+            $analysisData['security_analysis'] = $securityAnalysis;
+            
+            // حساب تجربة المستخدم بناءً على مقاييس حقيقية
+            $analysisData['ux_score'] = $this->calculateUXScore($analysisData);
             $analysisData['overall_score'] = $this->calculateOverallScore($analysisData);
 
             // حفظ التحليل في قاعدة البيانات
@@ -427,6 +433,119 @@ class WebsiteAnalyzerController extends Controller
         }
         
         return $recommendations;
+    }
+    
+    /**
+     * حساب نتيجة الأمان بناءً على التحليل الحقيقي
+     */
+    private function calculateSecurityScore($securityAnalysis)
+    {
+        $score = 0;
+        
+        // SSL/TLS (30 نقطة)
+        if (isset($securityAnalysis['ssl_analysis']['has_ssl']) && $securityAnalysis['ssl_analysis']['has_ssl']) {
+            $score += 30;
+        }
+        
+        // Security Headers (40 نقطة)
+        $headers = $securityAnalysis['security_headers'] ?? [];
+        $importantHeaders = ['x-frame-options', 'x-content-type-options', 'x-xss-protection', 'strict-transport-security'];
+        $headerScore = 0;
+        foreach ($importantHeaders as $header) {
+            if (isset($headers[$header]) && $headers[$header]['present']) {
+                $headerScore += 10;
+            }
+        }
+        $score += min($headerScore, 40);
+        
+        // فحص الثغرات (30 نقطة)
+        if (isset($securityAnalysis['vulnerability_scan']['critical_issues'])) {
+            $criticalIssues = count($securityAnalysis['vulnerability_scan']['critical_issues']);
+            $score += max(0, 30 - ($criticalIssues * 10));
+        } else {
+            $score += 20; // نتيجة افتراضية إذا لم يتم الفحص
+        }
+        
+        return min(100, max(0, $score));
+    }
+    
+    /**
+     * حساب نتيجة تجربة المستخدم بناءً على مقاييس حقيقية
+     */
+    private function calculateUXScore($analysisData)
+    {
+        $score = 0;
+        
+        // سرعة التحميل (40 نقطة)
+        $loadTime = $analysisData['load_time'] ?? 5;
+        if ($loadTime <= 2) {
+            $score += 40;
+        } elseif ($loadTime <= 4) {
+            $score += 30;
+        } elseif ($loadTime <= 6) {
+            $score += 20;
+        } else {
+            $score += 10;
+        }
+        
+        // نتيجة SEO (30 نقطة)
+        $seoScore = $analysisData['seo_score'] ?? 50;
+        $score += ($seoScore / 100) * 30;
+        
+        // نتيجة الأداء (30 نقطة)
+        $performanceScore = $analysisData['performance_score'] ?? 50;
+        $score += ($performanceScore / 100) * 30;
+        
+        return min(100, max(0, round($score)));
+    }
+    
+    /**
+     * تصدير التقرير كـ PDF
+     */
+    public function downloadPDF($id)
+    {
+        try {
+            $analysis = WebsiteAnalysis::findOrFail($id);
+            
+            // التأكد أن التحليل خاص بالمستخدم الحالي
+            if ($analysis->user_id !== auth()->id()) {
+                abort(403, 'غير مصرح لك بالوصول لهذا التقرير');
+            }
+            
+            $analysisData = json_decode($analysis->analysis_data, true);
+            
+            // إنشاء بيانات PDF
+            $pdfData = [
+                'analysis' => $analysis,
+                'data' => $analysisData,
+                'generated_at' => now()->format('Y/m/d H:i'),
+                'is_business' => $analysis->analysis_type === 'business'
+            ];
+            
+            // إنشاء PDF مع دعم العربية وخط DejaVu Sans
+            $pdf = Pdf::loadView('reports.analysis-pdf', $pdfData)
+                ->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isPhpEnabled' => true,
+                    'defaultFont' => 'DejaVu Sans',
+                    'isRemoteEnabled' => false
+                ]);
+                
+            $filename = 'تقرير_' . ($analysisData['business_name'] ?? 'موقع') . '_' . now()->format('Y_m_d') . '.pdf';
+            
+            return $pdf->download($filename);
+            
+        } catch (\Exception $e) {
+            Log::error('PDF Export Error', [
+                'analysis_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return back()->withErrors([
+                'pdf' => 'فشل في تصدير التقرير: ' . $e->getMessage()
+            ]);
+        }
     }
     
     /**
