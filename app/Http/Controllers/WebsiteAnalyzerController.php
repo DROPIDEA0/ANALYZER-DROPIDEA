@@ -107,12 +107,48 @@ class WebsiteAnalyzerController extends Controller
                 $analysisData['competitors_count'] = count($competitorAnalysis['competitors'] ?? []);
             }
 
-            // تحليل الذكاء الاصطناعي الشامل
-            $aiAnalysis = $this->aiAnalyzer->analyzeWebsiteWithAI(
-                $request->url, 
-                $basicAnalysis, 
-                $request->analysis_type
-            );
+            // تحليل شامل وحقيقي للموقع (يجب أن يتم قبل AI)
+            $comprehensiveService = app(ComprehensiveAnalysisService::class);
+            $comprehensiveAnalysis = $comprehensiveService->performComprehensiveAnalysis($request->url);
+            $analysisData['comprehensive_analysis'] = $comprehensiveAnalysis;
+            
+            // تحليل أمان الموقع باستخدام SecurityAnalysisService (يجب أن يتم قبل AI)
+            $securityService = app(\App\Services\SecurityAnalysisService::class);
+            $securityAnalysis = $securityService->analyzeWebsiteSecurity($request->url);
+            $analysisData['security_score'] = $this->calculateSecurityScore($securityAnalysis);
+            $analysisData['security_analysis'] = $securityAnalysis;
+            
+            // حساب تجربة المستخدم بناءً على مقاييس حقيقية
+            $analysisData['ux_score'] = $this->calculateUXScore($analysisData, $comprehensiveAnalysis);
+            
+            // تحليل الذكاء الاصطناعي الشامل مع دمج التحليل الفني المفصل
+            try {
+                $enhancedData = array_merge($basicAnalysis, [
+                    'comprehensive_analysis' => $comprehensiveAnalysis,
+                    'security_analysis' => $securityAnalysis
+                ]);
+                
+                $aiAnalysis = $this->aiAnalyzer->analyzeWebsiteWithAI(
+                    $request->url, 
+                    $enhancedData, 
+                    $request->analysis_type
+                );
+            } catch (\Exception $e) {
+                Log::warning('AI Analysis failed, using fallback', [
+                    'url' => $request->url,
+                    'error' => $e->getMessage()
+                ]);
+                
+                // استخدام تحليل افتراضي في حالة فشل الذكاء الاصطناعي
+                $aiAnalysis = [
+                    'summary' => 'تم إجراء التحليل التقني بنجاح، لكن تحليل الذكاء الاصطناعي غير متاح حالياً.',
+                    'overall_score' => 70,
+                    'strengths' => ['تم فحص الموقع بنجاح'],
+                    'weaknesses' => ['تحليل الذكاء الاصطناعي غير متاح'],
+                    'seo_recommendations' => ['تحسين محتوى الموقع'],
+                    'performance_recommendations' => ['تحسين سرعة التحميل']
+                ];
+            }
             
             // إصلاح بنية بيانات AI لتكون متوافقة مع الواجهة الأمامية
             if (isset($aiAnalysis['analysis']) && !isset($aiAnalysis['summary'])) {
@@ -155,14 +191,6 @@ class WebsiteAnalyzerController extends Controller
                 }
             }
             
-            // تحليل أمان الموقع باستخدام SecurityAnalysisService
-            $securityService = app(\App\Services\SecurityAnalysisService::class);
-            $securityAnalysis = $securityService->analyzeWebsiteSecurity($request->url);
-            $analysisData['security_score'] = $this->calculateSecurityScore($securityAnalysis);
-            $analysisData['security_analysis'] = $securityAnalysis;
-            
-            // حساب تجربة المستخدم بناءً على مقاييس حقيقية
-            $analysisData['ux_score'] = $this->calculateUXScore($analysisData);
             $analysisData['overall_score'] = $this->calculateOverallScore($analysisData);
 
             // حفظ التحليل في قاعدة البيانات
@@ -473,7 +501,7 @@ class WebsiteAnalyzerController extends Controller
     /**
      * حساب نتيجة تجربة المستخدم بناءً على مقاييس حقيقية
      */
-    private function calculateUXScore($analysisData)
+    private function calculateUXScore($analysisData, $comprehensiveAnalysis = null)
     {
         $score = 0;
         
@@ -496,6 +524,23 @@ class WebsiteAnalyzerController extends Controller
         // نتيجة الأداء (30 نقطة)
         $performanceScore = $analysisData['performance_score'] ?? 50;
         $score += ($performanceScore / 100) * 30;
+        
+        // مكافآت إضافية من التحليل الشامل
+        if ($comprehensiveAnalysis && !isset($comprehensiveAnalysis['error'])) {
+            $structure = $comprehensiveAnalysis['website_structure'] ?? [];
+            
+            // مكافأة للبنية الجيدة (10 نقاط إضافية)
+            if (($structure['has_navigation'] ?? false) && 
+                ($structure['has_footer'] ?? false) && 
+                ($structure['has_header'] ?? false)) {
+                $score += 5;
+            }
+            
+            // مكافأة للنصوص البديلة (5 نقاط)
+            if (($structure['missing_alt_texts'] ?? 0) === 0 && ($structure['images_count'] ?? 0) > 0) {
+                $score += 5;
+            }
+        }
         
         return min(100, max(0, round($score)));
     }
