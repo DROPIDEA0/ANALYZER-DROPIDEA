@@ -30,9 +30,67 @@ export default function WebsiteAnalyzer({ auth, analysis }) {
         business_name: ''
     });
 
+    // Circle progress component
+    const CircleProgress = ({ percentage, label, color = 'blue' }) => {
+        const radius = 45;
+        const circumference = 2 * Math.PI * radius;
+        const strokeDashoffset = circumference - (percentage / 100) * circumference;
+        
+        const getColorClass = (color, type = 'stroke') => {
+            const colors = {
+                blue: type === 'stroke' ? 'stroke-blue-500' : 'text-blue-600',
+                green: type === 'stroke' ? 'stroke-green-500' : 'text-green-600',
+                yellow: type === 'stroke' ? 'stroke-yellow-500' : 'text-yellow-600',
+                red: type === 'stroke' ? 'stroke-red-500' : 'text-red-600',
+                purple: type === 'stroke' ? 'stroke-purple-500' : 'text-purple-600',
+                indigo: type === 'stroke' ? 'stroke-indigo-500' : 'text-indigo-600'
+            };
+            return colors[color] || colors.blue;
+        };
+
+        return (
+            <div className="flex flex-col items-center">
+                <div className="relative w-24 h-24">
+                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r={radius}
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            fill="transparent"
+                            className="text-gray-200"
+                        />
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r={radius}
+                            strokeWidth="8"
+                            fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            className={getColorClass(color, 'stroke')}
+                            style={{
+                                transition: 'stroke-dashoffset 0.5s ease-in-out',
+                            }}
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className={`text-lg font-bold ${getColorClass(color, 'text')}`}>
+                            {percentage}%
+                        </span>
+                    </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-2 text-center">{label}</p>
+            </div>
+        );
+    };
+
     const [businessSearchQuery, setBusinessSearchQuery] = useState('');
     const [businessResults, setBusinessResults] = useState([]);
     const [isSearchingBusiness, setIsSearchingBusiness] = useState(false);
+    const [showBusinessSearch, setShowBusinessSearch] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
