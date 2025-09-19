@@ -754,24 +754,6 @@ class WebsiteAnalyzerController extends Controller
         return $result;
     }
 
-    /**
-     * تحميل تقرير PDF محسن
-     */
-    public function downloadPDF($id)
-    {
-        $analysis = WebsiteAnalysis::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        $analysisData = json_decode($analysis->analysis_data, true);
-        
-        // إنشاء تقرير PDF محسن مع تحليل الذكاء الاصطناعي
-        $pdfContent = $this->reportGenerator->generateEnhancedPDFReport($analysisData);
-        
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="ai-website-analysis-report-' . $id . '.pdf"');
-    }
 
     /**
      * عرض تاريخ التحليلات
