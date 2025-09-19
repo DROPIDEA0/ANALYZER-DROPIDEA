@@ -14,11 +14,12 @@
         }
         
         body {
-            font-family: 'IBM Plex Sans Arabic', 'DejaVu Sans', sans-serif;
-            line-height: 1.6;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            line-height: 1.8;
             color: #333;
             direction: rtl;
             text-align: right;
+            font-size: 14px;
         }
         
         .header {
@@ -30,9 +31,10 @@
         }
         
         .header h1 {
-            font-size: 28px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: bold;
             margin-bottom: 10px;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
         }
         
         .header .date {
@@ -50,9 +52,11 @@
         
         .business-info h2 {
             color: #495057;
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: bold;
             margin-bottom: 15px;
             border-bottom: 2px solid #007bff;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
             padding-bottom: 5px;
         }
         

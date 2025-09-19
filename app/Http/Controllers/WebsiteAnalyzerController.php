@@ -20,6 +20,7 @@ use App\Models\WebsiteAnalysis;
 use App\Models\WebsiteAnalysisAdvanced;
 use App\Models\User;
 use App\Services\UnifiedReportService;
+use App\Services\ComprehensiveAnalysisService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class WebsiteAnalyzerController extends Controller
@@ -522,14 +523,17 @@ class WebsiteAnalyzerController extends Controller
                 'is_business' => $analysis->analysis_type === 'business'
             ];
             
-            // إنشاء PDF مع دعم العربية وخط DejaVu Sans
+            // إنشاء PDF مع دعم العربية وخط DejaVu Sans المحسن
             $pdf = Pdf::loadView('reports.analysis-pdf', $pdfData)
                 ->setPaper('a4', 'portrait')
                 ->setOptions([
                     'isHtml5ParserEnabled' => true,
                     'isPhpEnabled' => true,
                     'defaultFont' => 'DejaVu Sans',
-                    'isRemoteEnabled' => false
+                    'isRemoteEnabled' => false,
+                    'debugKeepTemp' => false,
+                    'debugCss' => false,
+                    'fontHeightRatio' => 1.1
                 ]);
                 
             $filename = 'تقرير_' . ($analysisData['business_name'] ?? 'موقع') . '_' . now()->format('Y_m_d') . '.pdf';
