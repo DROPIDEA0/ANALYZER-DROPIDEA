@@ -19,7 +19,6 @@ use App\Services\SecurityAnalysisService;
 use App\Models\WebsiteAnalysis;
 use App\Models\WebsiteAnalysisAdvanced;
 use App\Models\User;
-use App\Services\GooglePlacesService;
 use App\Services\UnifiedReportService;
 
 class WebsiteAnalyzerController extends Controller
