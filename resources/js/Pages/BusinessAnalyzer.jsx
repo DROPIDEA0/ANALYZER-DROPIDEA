@@ -362,7 +362,7 @@ export default function BusinessAnalyzer({ auth, analysis, googleMapsApiKey }) {
                             {/* أزرار العودة وتحميل PDF */}
                             <div className="flex justify-between items-center bg-white rounded-xl shadow-lg border p-4">
                                 <button
-                                    onClick={() => window.location.reload()}
+                                    onClick={() => window.location.href = route('analyzer')}
                                     className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
                                 >
                                     <span className="ml-2">🔙</span>
