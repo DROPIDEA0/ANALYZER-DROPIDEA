@@ -179,7 +179,7 @@ class WebsiteAnalyzerController extends Controller
             $result = $this->generateEnhancedAnalysisResult($analysisData, $analysis->id);
             $result['unified_report'] = $report;
 
-            return Inertia::render('WebsiteAnalyzer', [
+            return Inertia::render('BusinessAnalyzer', [
                 'analysis' => $result
             ]);
 
@@ -317,7 +317,7 @@ class WebsiteAnalyzerController extends Controller
             $result = $this->generateBusinessAnalysisResult($analysisData, $analysis->id);
             $result['unified_report'] = $unifiedReportData;
             
-            return Inertia::render('WebsiteAnalyzer', [
+            return Inertia::render('BusinessAnalyzer', [
                 'analysis' => $result
             ]);
             
