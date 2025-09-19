@@ -210,9 +210,9 @@ class WebsiteAnalyzerController extends Controller
             
             // استخدام الطريقة المحدثة التي تدعم الدولة والفئة
             $results = $googlePlaces->quickSearch(
-                $request->input('query'),
-                $request->input('country'),
-                $request->input('category')
+                $request->query,
+                $request->country,
+                $request->category
             );
             
             return response()->json([
@@ -279,6 +279,7 @@ class WebsiteAnalyzerController extends Controller
                 'business_name' => $business['name'],
                 'business_category' => $request->business_category,
                 'country' => $request->country,
+                'city' => $business['address'] ?? $request->country,
                 'gmb_data' => [
                     'name' => $business['name'],
                     'address' => $business['address'] ?? '',

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class WebsiteAnalysis extends Model
 {
     use HasFactory;
+    
+    protected $table = 'website_analyses';
 
     protected $fillable = [
         'user_id',
