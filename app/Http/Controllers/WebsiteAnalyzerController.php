@@ -227,7 +227,7 @@ class WebsiteAnalyzerController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Business search error', [
-                'query' => $request->query,
+                'query' => $request->input('query'),
                 'error' => $e->getMessage()
             ]);
             
